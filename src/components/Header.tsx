@@ -3,8 +3,9 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import verimarketLogo from '@/assets/verimarket-logo.png';
 
 const navItems = [
-  { label: 'Markets', path: '/' },
-  { label: 'Create Market', path: '/create' },
+  { label: 'Home', path: '/' },
+  { label: 'Markets', path: '/markets' },
+  { label: 'Create', path: '/create' },
   { label: 'Docs', path: '/docs' },
 ];
 
