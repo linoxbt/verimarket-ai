@@ -14,16 +14,260 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      arbitrations: {
+        Row: {
+          confidence: number
+          data_hash: string
+          dispute_id: string
+          finalized_at: string
+          id: string
+          market_id: string
+          outcome: string
+          reasoning_steps: Json
+        }
+        Insert: {
+          confidence: number
+          data_hash: string
+          dispute_id: string
+          finalized_at?: string
+          id?: string
+          market_id: string
+          outcome: string
+          reasoning_steps?: Json
+        }
+        Update: {
+          confidence?: number
+          data_hash?: string
+          dispute_id?: string
+          finalized_at?: string
+          id?: string
+          market_id?: string
+          outcome?: string
+          reasoning_steps?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arbitrations_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arbitrations_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disputes: {
+        Row: {
+          bond_amount: number
+          created_at: string
+          disputer_address: string
+          evidence: Json
+          evidence_hash: string
+          id: string
+          market_id: string
+        }
+        Insert: {
+          bond_amount?: number
+          created_at?: string
+          disputer_address: string
+          evidence?: Json
+          evidence_hash: string
+          id?: string
+          market_id: string
+        }
+        Update: {
+          bond_amount?: number
+          created_at?: string
+          disputer_address?: string
+          evidence?: Json
+          evidence_hash?: string
+          id?: string
+          market_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      markets: {
+        Row: {
+          api_source: string
+          category: Database["public"]["Enums"]["market_category"]
+          created_at: string
+          creator_address: string | null
+          expiry: string
+          id: string
+          pinned: boolean
+          question: string
+          resolution_criteria: string
+          status: Database["public"]["Enums"]["market_status"]
+          updated_at: string
+          volume: number
+          yes_probability: number
+        }
+        Insert: {
+          api_source: string
+          category: Database["public"]["Enums"]["market_category"]
+          created_at?: string
+          creator_address?: string | null
+          expiry: string
+          id?: string
+          pinned?: boolean
+          question: string
+          resolution_criteria: string
+          status?: Database["public"]["Enums"]["market_status"]
+          updated_at?: string
+          volume?: number
+          yes_probability?: number
+        }
+        Update: {
+          api_source?: string
+          category?: Database["public"]["Enums"]["market_category"]
+          created_at?: string
+          creator_address?: string | null
+          expiry?: string
+          id?: string
+          pinned?: boolean
+          question?: string
+          resolution_criteria?: string
+          status?: Database["public"]["Enums"]["market_status"]
+          updated_at?: string
+          volume?: number
+          yes_probability?: number
+        }
+        Relationships: []
+      }
+      resolutions: {
+        Row: {
+          confidence: number
+          data_hash: string
+          evidence_package: Json | null
+          id: string
+          market_id: string
+          model_id: string
+          outcome: string
+          prompt_version: string
+          reasoning_steps: Json
+          resolved_at: string
+        }
+        Insert: {
+          confidence: number
+          data_hash: string
+          evidence_package?: Json | null
+          id?: string
+          market_id: string
+          model_id: string
+          outcome: string
+          prompt_version?: string
+          reasoning_steps?: Json
+          resolved_at?: string
+        }
+        Update: {
+          confidence?: number
+          data_hash?: string
+          evidence_package?: Json | null
+          id?: string
+          market_id?: string
+          model_id?: string
+          outcome?: string
+          prompt_version?: string
+          reasoning_steps?: Json
+          resolved_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resolutions_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trades: {
+        Row: {
+          amount: number
+          created_at: string
+          estimated_payout: number
+          id: string
+          market_id: string
+          position: string
+          trader_address: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          estimated_payout: number
+          id?: string
+          market_id: string
+          position: string
+          trader_address: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          estimated_payout?: number
+          id?: string
+          market_id?: string
+          position?: string
+          trader_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trades_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      market_category: "news" | "sports" | "crypto" | "weather"
+      market_status: "open" | "resolving" | "disputed" | "finalized"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +394,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      market_category: ["news", "sports", "crypto", "weather"],
+      market_status: ["open", "resolving", "disputed", "finalized"],
+    },
   },
 } as const
