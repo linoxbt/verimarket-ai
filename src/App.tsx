@@ -9,10 +9,12 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { wagmiConfig } from '@/config/wagmi';
 
 import Header from "@/components/Header";
-import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Markets from "./pages/Markets";
 import CreateMarket from "./pages/CreateMarket";
 import MarketDetail from "./pages/MarketDetail";
 import Docs from "./pages/Docs";
+import AdminAuth from "./pages/AdminAuth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,10 +35,12 @@ const App = () => (
           <BrowserRouter>
             <Header />
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/markets" element={<Markets />} />
               <Route path="/create" element={<CreateMarket />} />
               <Route path="/market/:id" element={<MarketDetail />} />
               <Route path="/docs" element={<Docs />} />
+              <Route path="/auth" element={<AdminAuth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

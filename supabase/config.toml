@@ -1,1 +1,16 @@
 project_id = "kiwttackwobuncgaenzh"
+
+[functions.fetch-news]
+verify_jwt = false
+
+[functions.fetch-crypto]
+verify_jwt = false
+
+[functions.fetch-sports]
+verify_jwt = false
+
+[functions.fetch-weather]
+verify_jwt = false
+
+[functions.resolve-market]
+verify_jwt = false
