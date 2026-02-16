@@ -15,6 +15,7 @@ import CreateMarket from "./pages/CreateMarket";
 import MarketDetail from "./pages/MarketDetail";
 import Docs from "./pages/Docs";
 import AdminAuth from "./pages/AdminAuth";
+import Portfolio from "./pages/Portfolio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/create" element={<CreateMarket />} />
               <Route path="/market/:id" element={<MarketDetail />} />
               <Route path="/docs" element={<Docs />} />
+              <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/auth" element={<AdminAuth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
