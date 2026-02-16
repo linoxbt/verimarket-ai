@@ -5,7 +5,6 @@ import verimarketLogo from '@/assets/verimarket-logo.png';
 const navItems = [
   { label: 'Home', path: '/' },
   { label: 'Markets', path: '/markets' },
-  { label: 'Create', path: '/create' },
   { label: 'Docs', path: '/docs' },
 ];
 

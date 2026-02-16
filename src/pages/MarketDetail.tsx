@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { demoMarkets } from '@/data/demo-markets';
 import { useMarket } from '@/hooks/useMarkets';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +31,23 @@ const statusColors: Record<string, string> = {
 const MarketDetail = () => {
   const { id } = useParams();
   const { data: dbMarket } = useMarket(id || '');
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for live probability updates
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`market-${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'markets', filter: `id=eq.${id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['market', id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, queryClient]);
   
   // Fall back to demo data
   const market = dbMarket || demoMarkets.find((m) => m.id === id);
