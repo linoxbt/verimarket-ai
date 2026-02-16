@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { demoMarkets } from '@/data/demo-markets';
 
@@ -19,6 +20,23 @@ export interface DBMarket {
 }
 
 export function useMarkets() {
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for live updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('markets-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'markets' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['markets'] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['markets'],
     queryFn: async (): Promise<DBMarket[]> => {
@@ -38,7 +56,6 @@ export function useMarkets() {
         }));
       }
 
-      // If no DB markets yet, seed with demo data
       if (!data || data.length === 0) {
         return demoMarkets.map(m => ({
           ...m,

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MarketCard from '@/components/MarketCard';
 import { useMarkets } from '@/hooks/useMarkets';
-import { Plus, TrendingUp, BarChart3, Zap, Shield, ArrowRight } from 'lucide-react';
+import { TrendingUp, BarChart3, Zap, Shield, ArrowRight } from 'lucide-react';
 
 const Dashboard = () => {
   const { data: markets = [], isLoading } = useMarkets();
@@ -27,11 +27,6 @@ const Dashboard = () => {
         </p>
         <div className="mt-6 flex gap-3">
           <Button asChild size="lg" className="gap-2">
-            <Link to="/create">
-              <Plus className="h-4 w-4" /> Create Market
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg" className="gap-2">
             <Link to="/markets">
               <TrendingUp className="h-4 w-4" /> Browse Markets
             </Link>

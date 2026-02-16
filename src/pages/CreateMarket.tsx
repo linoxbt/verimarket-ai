@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCreateMarket } from '@/hooks/useMarkets';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,21 +24,52 @@ const apiSources: Record<string, Array<{ label: string; value: string }>> = {
 
 const CreateMarket = () => {
   const navigate = useNavigate();
+  const createMarket = useCreateMarket();
   const [question, setQuestion] = useState('');
   const [criteria, setCriteria] = useState('');
   const [category, setCategory] = useState('');
   const [apiSource, setApiSource] = useState('');
   const [expiryDate, setExpiryDate] = useState<Date>();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) { setIsAdmin(false); return; }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      setIsAdmin(!!data);
+    });
+  }, []);
+
+  if (isAdmin === null) return <main className="container py-20 text-center"><p className="text-muted-foreground">Loading...</p></main>;
+  if (!isAdmin) {
+    navigate('/markets');
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!question || !criteria || !category || !apiSource || !expiryDate) {
       toast.error('Please fill in all fields');
       return;
     }
-    // Will integrate with DB later
-    toast.success('Market created successfully! (Demo)');
-    navigate('/');
+    try {
+      await createMarket.mutateAsync({
+        question,
+        category,
+        resolution_criteria: criteria,
+        expiry: expiryDate.toISOString(),
+        api_source: apiSource,
+      });
+      toast.success('Market created successfully!');
+      navigate('/markets');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create market');
+    }
   };
 
   return (
