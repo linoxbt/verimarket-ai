@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Clock, Shield, AlertTriangle, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import TradeActivityFeed from '@/components/TradeActivityFeed';
 
 function timeUntil(dateStr: string) {
   const diff = new Date(dateStr).getTime() - Date.now();
@@ -256,6 +257,9 @@ const MarketDetail = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Trade Activity Feed */}
+        <TradeActivityFeed marketId={id || ''} />
 
         {/* Dispute button */}
         {(market.status === 'resolving' || market.status === 'disputed') && (
