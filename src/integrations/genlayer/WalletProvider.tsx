@@ -17,6 +17,7 @@ interface WalletContextValue {
   network: NetworkKey;
   connecting: boolean;
   connect: () => Promise<void>;
+  openAccount: () => Promise<void>;
   disconnect: () => void;
   setNetwork: (network: NetworkKey) => Promise<void>;
 }
@@ -59,6 +60,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     await open();
   }, [open]);
 
+  const openAccount = useCallback(async () => {
+    await open({ view: "Account" });
+  }, [open]);
+
   const disconnect = useCallback(() => {
     wagmiDisconnect();
   }, [wagmiDisconnect]);
@@ -80,10 +85,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       network,
       connecting: isConnecting,
       connect,
+      openAccount,
       disconnect,
       setNetwork,
     }),
-    [address, network, isConnecting, connect, disconnect, setNetwork],
+    [address, network, isConnecting, connect, openAccount, disconnect, setNetwork],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

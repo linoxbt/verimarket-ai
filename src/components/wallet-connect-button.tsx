@@ -6,15 +6,15 @@ function truncate(address: string) {
 }
 
 export function WalletConnectButton() {
-  const { address, connecting, connect, disconnect } = useWallet();
+  const { address, connecting, connect, openAccount } = useWallet();
 
   if (address) {
     return (
       <button
         type="button"
-        onClick={disconnect}
+        onClick={openAccount}
         className="rounded-sm border border-line px-3 py-1.5 font-mono text-xs text-ink hover:border-accent hover:text-accent"
-        title="Disconnect"
+        title="Account"
       >
         {truncate(address)}
       </button>
