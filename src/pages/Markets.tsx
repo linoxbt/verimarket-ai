@@ -72,7 +72,7 @@ export default function Markets() {
             <p className="mt-1 font-mono text-sm text-muted">Try a different category or search term.</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((market) => (
               <MarketCard key={market.id} market={market} />
             ))}
