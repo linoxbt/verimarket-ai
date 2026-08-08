@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LineChart, PanelLeft, PanelLeftClose, PlusCircle, Shield, Wallet, X } from "lucide-react";
+import { BookOpen, LineChart, PanelLeft, PanelLeftClose, PlusCircle, Shield, Wallet, X } from "lucide-react";
 import { Wordmark } from "@/components/wordmark";
 import { LogoMark } from "@/components/logo-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: "/markets", label: "Markets", icon: LineChart },
   { to: "/create", label: "Create Market", icon: PlusCircle },
   { to: "/portfolio", label: "Portfolio", icon: Wallet },
+  { to: "/docs", label: "Docs", icon: BookOpen },
 ];
 
 function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {

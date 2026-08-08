@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { MarketCard } from "@/components/MarketCard";
+import { Card } from "@/components/ui/card";
 import { useMarkets } from "@/hooks/useMarkets";
 import { cn } from "@/lib/utils";
+import { formatGen } from "@/lib/format";
 import type { MarketCategory } from "@/integrations/genlayer/types";
 
 const CATEGORIES: { label: string; value: MarketCategory | "all" }[] = [
@@ -29,10 +31,37 @@ export default function Markets() {
     return result;
   }, [markets, category, search]);
 
+  const stats = useMemo(() => {
+    const visible = markets.filter((m) => !m.hidden);
+    const open = visible.filter((m) => m.status === "open").length;
+    const inDispute = visible.filter((m) => m.status === "resolving" || m.status === "disputed").length;
+    const volume = visible.reduce((sum, m) => sum + m.yes_pool + m.no_pool, 0n);
+    return { total: visible.length, open, inDispute, volume };
+  }, [markets]);
+
   return (
     <div>
       <p className="font-mono text-xs uppercase tracking-widest text-accent">markets</p>
       <h1 className="mt-1 font-display text-2xl font-bold text-ink">Browse markets</h1>
+
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="p-4">
+          <p className="font-mono text-xs uppercase tracking-wide text-muted">Total Markets</p>
+          <p className="mt-1 font-display text-2xl font-bold text-ink">{stats.total}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="font-mono text-xs uppercase tracking-wide text-muted">Open</p>
+          <p className="mt-1 font-display text-2xl font-bold text-pass">{stats.open}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="font-mono text-xs uppercase tracking-wide text-muted">Resolving / Disputed</p>
+          <p className="mt-1 font-display text-2xl font-bold text-partial">{stats.inDispute}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="font-mono text-xs uppercase tracking-wide text-muted">Total Volume</p>
+          <p className="mt-1 font-display text-2xl font-bold text-ink">{formatGen(stats.volume)}</p>
+        </Card>
+      </div>
 
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
