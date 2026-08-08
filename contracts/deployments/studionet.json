@@ -1,0 +1,7 @@
+{
+  "contract_address": "0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797",
+  "network": "studionet",
+  "chain_id": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "notes": "Deployed and fully exercised end-to-end during integration testing: create_market -> place_trade(yes/no) -> resolve_market (real consensus) -> file_dispute -> arbitrate (real consensus) -> claim_payout. Market id 0, final outcome 'yes'."
+}

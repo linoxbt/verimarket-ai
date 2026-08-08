@@ -1,29 +1,29 @@
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-
+import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-  {
-    variants: {
-      variant: {
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
+type BadgeTone = "pass" | "partial" | "fail" | "sev-high" | "neutral";
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
+const TONE_CLASSES: Record<BadgeTone, string> = {
+  pass: "text-pass bg-pass/10 border-pass/40",
+  partial: "text-partial bg-partial/10 border-partial/40",
+  fail: "text-fail bg-fail/10 border-fail/40",
+  "sev-high": "text-sev-high bg-sev-high/10 border-sev-high/40",
+  neutral: "text-muted bg-surface2 border-line",
+};
 
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
+interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+  tone?: BadgeTone;
 }
 
-export { Badge, badgeVariants };
+export function Badge({ className, tone = "neutral", ...props }: BadgeProps) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-sm border px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide",
+        TONE_CLASSES[tone],
+        className,
+      )}
+      {...props}
+    />
+  );
+}

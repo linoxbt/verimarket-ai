@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+contracts/deployments/*.keys.json
+
+.env
+
+# Python venv + gltest artifacts (contract tooling)
+.venv
+artifacts
+.gltest_cache
+.pytest_cache
+__pycache__/
+*.pyc

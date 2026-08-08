@@ -1,144 +1,85 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { demoMarkets } from '@/data/demo-markets';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { parseEther } from "viem";
+import { useWallet } from "@/integrations/genlayer/WalletProvider";
+import * as veriMarket from "@/integrations/genlayer/contract";
+import type { MarketCategory } from "@/integrations/genlayer/types";
 
-export interface DBMarket {
-  id: string;
-  question: string;
-  category: string;
-  status: string;
-  resolution_criteria: string;
-  expiry: string;
-  yes_probability: number;
-  api_source: string;
-  created_at: string;
-  updated_at: string;
-  creator_address?: string | null;
-  pinned: boolean;
-  volume: number;
-}
+const POLL_INTERVAL_MS = 15000;
 
 export function useMarkets() {
-  const queryClient = useQueryClient();
-
-  // Realtime subscription for live updates
-  useEffect(() => {
-    const channel = supabase
-      .channel('markets-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'markets' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['markets'] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
-
+  const { network } = useWallet();
   return useQuery({
-    queryKey: ['markets'],
-    queryFn: async (): Promise<DBMarket[]> => {
-      const { data, error } = await supabase
-        .from('markets')
-        .select('*')
-        .order('pinned', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('DB fetch failed, using demo data:', error);
-        return demoMarkets.map(m => ({
-          ...m,
-          updated_at: m.created_at,
-          pinned: false,
-          volume: Math.random() * 50000,
-        }));
-      }
-
-      if (!data || data.length === 0) {
-        return demoMarkets.map(m => ({
-          ...m,
-          updated_at: m.created_at,
-          pinned: false,
-          volume: Math.random() * 50000,
-        }));
-      }
-
-      return data as DBMarket[];
-    },
+    queryKey: ["markets", network],
+    queryFn: () => veriMarket.getAllMarkets(network),
+    refetchInterval: POLL_INTERVAL_MS,
   });
 }
 
-export function useMarket(id: string) {
+export function useMarket(id: number | undefined) {
+  const { network } = useWallet();
   return useQuery({
-    queryKey: ['market', id],
-    queryFn: async (): Promise<DBMarket | null> => {
-      const { data, error } = await supabase
-        .from('markets')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        // Try demo data
-        const demo = demoMarkets.find(m => m.id === id);
-        if (demo) return { ...demo, updated_at: demo.created_at, pinned: false, volume: Math.random() * 50000 };
-        return null;
-      }
-      return data as DBMarket;
-    },
+    queryKey: ["market", network, id],
+    queryFn: () => veriMarket.getMarket(network, id as number),
+    enabled: id !== undefined,
+    refetchInterval: POLL_INTERVAL_MS,
   });
 }
 
 export function useCreateMarket() {
+  const { network, address } = useWallet();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (market: {
+    mutationFn: async (params: {
       question: string;
-      category: string;
-      resolution_criteria: string;
-      expiry: string;
-      api_source: string;
-      creator_address?: string;
+      category: MarketCategory;
+      sourceQuery: string;
+      resolutionCriteria: string;
+      expiry: number;
     }) => {
-      const { data, error } = await supabase
-        .from('markets')
-        .insert({
-          question: market.question,
-          category: market.category as any,
-          resolution_criteria: market.resolution_criteria,
-          expiry: market.expiry,
-          api_source: market.api_source,
-          creator_address: market.creator_address,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      if (!address) throw new Error("Connect a wallet first");
+      return veriMarket.createMarket(network, address, params);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['markets'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["markets", network] }),
   });
 }
 
 export function usePlaceTrade() {
+  const { network, address } = useWallet();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (trade: {
-      market_id: string;
-      trader_address: string;
-      position: 'YES' | 'NO';
-      amount: number;
-      estimated_payout: number;
-    }) => {
-      const { data, error } = await supabase
-        .from('trades')
-        .insert(trade)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+    mutationFn: async (params: { marketId: number; position: "yes" | "no"; amountGen: string }) => {
+      if (!address) throw new Error("Connect a wallet first");
+      const amountWei = parseEther(params.amountGen);
+      return veriMarket.placeTrade(network, address, params.marketId, params.position, amountWei);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['markets'] }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["markets", network] });
+      queryClient.invalidateQueries({ queryKey: ["market", network, variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ["marketTrades", network, variables.marketId] });
+    },
+  });
+}
+
+export function usePinMarket() {
+  const { network, address } = useWallet();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { marketId: number; pinned: boolean }) => {
+      if (!address) throw new Error("Connect a wallet first");
+      return veriMarket.pinMarket(network, address, params.marketId, params.pinned);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["markets", network] }),
+  });
+}
+
+export function useHideMarket() {
+  const { network, address } = useWallet();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { marketId: number; hidden: boolean }) => {
+      if (!address) throw new Error("Connect a wallet first");
+      return veriMarket.hideMarket(network, address, params.marketId, params.hidden);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["markets", network] }),
   });
 }

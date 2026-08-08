@@ -1,65 +1,86 @@
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource/space-mono/400.css";
+@import "@fontsource/space-mono/700.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
+:root {
+  --bg: #f5f1e8;
+  --surface: #ffffff;
+  --surface-2: #fbf8f1;
+  --ink: #1b1811;
+  --muted: #6b6455;
+  --accent: #a66b22;
+  --accent-dim: #c9a063;
+  --line: #e4ddcb;
+  --pass: #4b7a4e;
+  --partial: #8a6b12;
+  --fail: #a13f38;
+  --sev-high: #b35e1f;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 96%;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 96%;
-
-    --primary: 250 80% 62%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 217 33% 14%;
-    --secondary-foreground: 210 40% 96%;
-
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 55%;
-
-    --accent: 220 70% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 250 80% 62%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 250 80% 62%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 14%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 217 33% 18%;
-    --sidebar-ring: 250 80% 62%;
-
-    /* Custom tokens */
-    --glow-blue: 220 90% 56%;
-    --glow-purple: 260 85% 60%;
-    --success: 142 70% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0d0b;
+    --surface: #17150f;
+    --surface-2: #1e1b14;
+    --ink: #f3efe6;
+    --muted: #948c7a;
+    --accent: #c08a3e;
+    --accent-dim: #8a6431;
+    --line: #2a2721;
+    --pass: #7fae7f;
+    --partial: #c9a227;
+    --fail: #c0524a;
+    --sev-high: #d97a3d;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e0d0b;
+  --surface: #17150f;
+  --surface-2: #1e1b14;
+  --ink: #f3efe6;
+  --muted: #948c7a;
+  --accent: #c08a3e;
+  --accent-dim: #8a6431;
+  --line: #2a2721;
+  --pass: #7fae7f;
+  --partial: #c9a227;
+  --fail: #c0524a;
+  --sev-high: #d97a3d;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-line;
+  }
+
+  html {
+    @apply scroll-smooth;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-bg text-ink antialiased;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,0 +1,7 @@
+{
+  "contract_address": "0x42919CA9E6DEC6d68D41F032000A26fc598faBD2",
+  "network": "testnetAsimov",
+  "chain_id": 4221,
+  "rpc": "https://rpc-asimov.genlayer.com",
+  "notes": "Deployed and smoke-tested: create_market + place_trade confirmed on-chain (market id 0, 'Will BTC exceed $1?', yes_pool credited). Deploy account funded by the user via the testnet faucet + a manual top-up."
+}

@@ -1,189 +1,157 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCreateMarket } from '@/hooks/useMarkets';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCreateMarket } from "@/hooks/useMarkets";
+import { useWallet } from "@/integrations/genlayer/WalletProvider";
+import { Button } from "@/components/ui/button";
+import { CATEGORIES, type MarketCategory } from "@/integrations/genlayer/types";
 
-const apiSources: Record<string, Array<{ label: string; value: string }>> = {
-  news: [{ label: 'NewsAPI', value: 'newsapi' }],
-  sports: [{ label: 'TheSportsDB', value: 'thesportsdb' }],
-  crypto: [{ label: 'CoinGecko', value: 'coingecko' }],
-  weather: [{ label: 'OpenWeather', value: 'openweather' }],
+const SOURCE_HINTS: Record<MarketCategory, { label: string; placeholder: string; help: string }> = {
+  crypto: {
+    label: "CoinGecko coin id",
+    placeholder: "bitcoin",
+    help: "The CoinGecko API id for the asset, e.g. bitcoin, ethereum.",
+  },
+  sports: {
+    label: "TheSportsDB event query",
+    placeholder: "Arsenal_vs_Chelsea",
+    help: "Team names as they appear in TheSportsDB's event search.",
+  },
+  news: {
+    label: "GDELT search query",
+    placeholder: "genlayer intelligent contracts",
+    help: "Keywords to search recent news coverage for.",
+  },
+  weather: {
+    label: "Coordinates (lat,lon)",
+    placeholder: "40.7128,-74.006",
+    help: "Latitude and longitude for the Open-Meteo forecast.",
+  },
 };
 
-const CreateMarket = () => {
+function toUnixTimestamp(datetimeLocal: string): number {
+  return Math.floor(new Date(datetimeLocal).getTime() / 1000);
+}
+
+export default function CreateMarket() {
   const navigate = useNavigate();
+  const { address, connect } = useWallet();
   const createMarket = useCreateMarket();
-  const [question, setQuestion] = useState('');
-  const [criteria, setCriteria] = useState('');
-  const [category, setCategory] = useState('');
-  const [apiSource, setApiSource] = useState('');
-  const [expiryDate, setExpiryDate] = useState<Date>();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) { setIsAdmin(false); return; }
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-      setIsAdmin(!!data);
-    });
-  }, []);
+  const [question, setQuestion] = useState("");
+  const [criteria, setCriteria] = useState("");
+  const [category, setCategory] = useState<MarketCategory>("crypto");
+  const [sourceQuery, setSourceQuery] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  if (isAdmin === null) return <main className="container py-20 text-center"><p className="text-muted-foreground">Loading...</p></main>;
-  if (!isAdmin) {
-    navigate('/markets');
-    return null;
-  }
+  const hint = SOURCE_HINTS[category];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!question || !criteria || !category || !apiSource || !expiryDate) {
-      toast.error('Please fill in all fields');
+    setError(null);
+
+    if (!question || !criteria || !sourceQuery || !expiry) {
+      setError("Please fill in all fields.");
       return;
     }
+
+    if (!address) {
+      await connect();
+      return;
+    }
+
     try {
       await createMarket.mutateAsync({
         question,
         category,
-        resolution_criteria: criteria,
-        expiry: expiryDate.toISOString(),
-        api_source: apiSource,
+        sourceQuery,
+        resolutionCriteria: criteria,
+        expiry: toUnixTimestamp(expiry),
       });
-      toast.success('Market created successfully!');
-      navigate('/markets');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to create market');
+      navigate("/markets");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create market");
     }
-  };
+  }
 
   return (
-    <main className="container max-w-2xl py-8">
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="text-2xl">Create Prediction Market</CardTitle>
-          <CardDescription>Define a measurable question to be resolved by AI using verified data sources.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="question">Market Question</Label>
-              <Input
-                id="question"
-                placeholder="Will BTC exceed $120,000 by March 31, 2026?"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                className="bg-secondary"
-              />
-            </div>
+    <div className="mx-auto max-w-2xl">
+      <p className="font-mono text-xs uppercase tracking-widest text-accent">create</p>
+      <h1 className="mt-1 font-display text-2xl font-bold text-ink">Create a market</h1>
+      <p className="mt-2 text-sm text-muted">
+        Markets are resolved by a GenLayer Intelligent Contract that fetches evidence from the source below
+        and reaches multi-validator consensus on the outcome.
+      </p>
 
-            <div className="space-y-2">
-              <Label htmlFor="criteria">Resolution Criteria</Label>
-              <Textarea
-                id="criteria"
-                placeholder="Bitcoin price must be above $120,000 USD on CoinGecko at the expiry timestamp."
-                value={criteria}
-                onChange={(e) => setCriteria(e.target.value)}
-                className="bg-secondary min-h-[100px]"
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <label className="font-mono text-xs uppercase tracking-wide text-muted">Question</label>
+          <input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Will BTC exceed $120,000 by March 31, 2026?"
+            className="rounded-sm border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+          />
+        </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={category} onValueChange={(v) => { setCategory(v); setApiSource(''); }}>
-                  <SelectTrigger className="bg-secondary">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="news">News</SelectItem>
-                    <SelectItem value="sports">Sports</SelectItem>
-                    <SelectItem value="crypto">Crypto</SelectItem>
-                    <SelectItem value="weather">Weather</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="flex flex-col gap-2">
+          <label className="font-mono text-xs uppercase tracking-wide text-muted">Resolution criteria</label>
+          <textarea
+            value={criteria}
+            onChange={(e) => setCriteria(e.target.value)}
+            placeholder="Resolves YES if the CoinGecko USD price for bitcoin is above 120000 at expiry."
+            rows={3}
+            className="rounded-sm border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+          />
+        </div>
 
-              <div className="space-y-2">
-                <Label>API Source</Label>
-                <Select value={apiSource} onValueChange={setApiSource} disabled={!category}>
-                  <SelectTrigger className="bg-secondary">
-                    <SelectValue placeholder="Select source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {category && apiSources[category]?.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <label className="font-mono text-xs uppercase tracking-wide text-muted">Category</label>
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value as MarketCategory);
+                setSourceQuery("");
+              }}
+              className="rounded-sm border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c[0].toUpperCase() + c.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div className="space-y-2">
-              <Label>Expiration Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-secondary",
-                      !expiryDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expiryDate ? format(expiryDate, "PPP") : "Pick expiration date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={expiryDate}
-                    onSelect={setExpiryDate}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          <div className="flex flex-col gap-2">
+            <label className="font-mono text-xs uppercase tracking-wide text-muted">Expiry</label>
+            <input
+              type="datetime-local"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+              className="rounded-sm border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
+            />
+          </div>
+        </div>
 
-            {question && criteria && category && (
-              <Card className="border-border bg-secondary/50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Resolution Template Preview</CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground font-mono">
-                  <p>Question: {question}</p>
-                  <p>Criteria: {criteria}</p>
-                  <p>Source: {apiSource || '(select source)'}</p>
-                  <p>Expiry: {expiryDate ? format(expiryDate, "PPP") : '(select date)'}</p>
-                </CardContent>
-              </Card>
-            )}
+        <div className="flex flex-col gap-2">
+          <label className="font-mono text-xs uppercase tracking-wide text-muted">{hint.label}</label>
+          <input
+            value={sourceQuery}
+            onChange={(e) => setSourceQuery(e.target.value)}
+            placeholder={hint.placeholder}
+            className="rounded-sm border border-line bg-surface px-3 py-2 font-mono text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+          />
+          <p className="font-mono text-[11px] text-muted">{hint.help}</p>
+        </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Create Market
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </main>
+        {error && <p className="font-mono text-xs text-fail">{error}</p>}
+
+        <Button type="submit" disabled={createMarket.isPending} className="w-full">
+          {createMarket.isPending ? "Submitting…" : address ? "Create Market" : "Connect Wallet to Create"}
+        </Button>
+      </form>
+    </div>
   );
-};
-
-export default CreateMarket;
+}

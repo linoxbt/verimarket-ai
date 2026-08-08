@@ -1,141 +1,127 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import MarketCard from '@/components/MarketCard';
-import { useMarkets } from '@/hooks/useMarkets';
-import { TrendingUp, BarChart3, Zap, Shield, ArrowRight } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { FadeIn } from "@/components/fade-in";
+import { PipelineMotion } from "@/components/pipeline-motion";
 
-const Dashboard = () => {
-  const { data: markets = [], isLoading } = useMarkets();
+const STEPS = [
+  {
+    n: "01",
+    title: "Create or Trade",
+    desc: "Create a market on any crypto, sports, news or weather question, or trade YES/NO on one that already exists.",
+  },
+  {
+    n: "02",
+    title: "AI Resolution",
+    desc: "At expiry, a GenLayer Intelligent Contract fetches real evidence and runs the same LLM prompt independently across multiple validators, who must agree on the outcome before it's accepted.",
+  },
+  {
+    n: "03",
+    title: "Dispute & Arbitrate",
+    desc: "A 24-hour window lets anyone file a bonded dispute with new evidence. Arbitration re-runs the same consensus process, weighing both sides, for a final binding outcome.",
+  },
+];
 
-  const openMarkets = markets.filter(m => m.status === 'open');
-  const resolvingMarkets = markets.filter(m => m.status === 'resolving' || m.status === 'disputed');
-  const totalVolume = markets.reduce((sum, m) => sum + (m.volume || 0), 0);
-  const pinnedOrTop = markets.filter(m => m.pinned).length > 0
-    ? markets.filter(m => m.pinned)
-    : markets.slice(0, 3);
-
+export default function Dashboard() {
   return (
-    <main className="container py-8">
-      {/* Hero */}
-      <section className="mb-10">
-        <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-          AI-Resolved <span className="text-primary">Prediction Markets</span>
-        </h1>
-        <p className="mt-3 text-lg text-muted-foreground max-w-2xl">
-          Trade on real-world outcomes resolved by deterministic AI execution on GenLayer's intelligent contracts.
-        </p>
-        <div className="mt-6 flex gap-3">
-          <Button asChild size="lg" className="gap-2">
-            <Link to="/markets">
-              <TrendingUp className="h-4 w-4" /> Browse Markets
+    <main>
+      <section className="mx-auto grid max-w-5xl gap-12 px-6 py-20 md:grid-cols-[1.2fr,1fr] md:py-28">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-widest text-accent">
+            &gt; ai-resolved prediction markets on genlayer
+          </p>
+          <h1 className="mt-4 font-display text-4xl font-bold leading-tight text-ink md:text-5xl">
+            Markets settled by evidence, not opinions.
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">
+            VeriMarket runs entirely on-chain as a GenLayer Intelligent Contract — real evidence, real LLM
+            reasoning, and real multi-validator consensus decide every outcome. No off-chain oracle, no
+            centralized backend.
+          </p>
+          <div className="mt-8 flex items-center gap-6">
+            <Link
+              to="/markets"
+              className="rounded-sm bg-accent px-5 py-2.5 font-mono text-sm text-bg hover:opacity-90"
+            >
+              Browse Markets
             </Link>
-          </Button>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="grid gap-4 sm:grid-cols-4 mb-10">
-        <Card className="border-border bg-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <BarChart3 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{markets.length}</p>
-                <p className="text-xs text-muted-foreground">Total Markets</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <Zap className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{openMarkets.length}</p>
-                <p className="text-xs text-muted-foreground">Active Markets</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Shield className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{resolvingMarkets.length}</p>
-                <p className="text-xs text-muted-foreground">Resolving/Disputed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                <p className="text-xs text-muted-foreground">Total Volume</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Featured markets */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Featured Markets</h2>
-          <Button asChild variant="ghost" size="sm" className="gap-1 text-muted-foreground">
-            <Link to="/markets">View all <ArrowRight className="h-3 w-3" /></Link>
-          </Button>
-        </div>
-        {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[1,2,3].map(i => <div key={i} className="h-48 rounded-lg bg-card animate-pulse border border-border" />)}
+            <Link to="/docs" className="font-mono text-sm text-muted hover:text-ink">
+              Read the docs →
+            </Link>
           </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pinnedOrTop.map((market) => (
-              <MarketCard key={market.id} market={market as any} />
+        </div>
+        <FadeIn delay={0.15} className="flex items-center">
+          <PipelineMotion />
+        </FadeIn>
+      </section>
+
+      <section id="pipeline" className="border-t border-line">
+        <div className="mx-auto max-w-5xl px-6 py-16">
+          <FadeIn>
+            <p className="font-mono text-xs uppercase tracking-widest text-accent">how it works</p>
+            <h2 className="mt-2 font-display text-2xl font-bold text-ink">
+              Consensus, not a single API call
+            </h2>
+          </FadeIn>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {STEPS.map((step, i) => (
+              <FadeIn key={step.n} delay={i * 0.1}>
+                <div className="relative overflow-hidden rounded-sm border border-line bg-surface p-6">
+                  <div
+                    className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-20"
+                    style={{ background: "radial-gradient(circle, var(--accent), transparent 70%)" }}
+                  />
+                  <span className="font-mono text-xs text-accent">{step.n}</span>
+                  <h3 className="mt-2 font-display text-lg font-bold text-ink">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{step.desc}</p>
+                </div>
+              </FadeIn>
             ))}
           </div>
-        )}
-      </section>
-
-      {/* How it works */}
-      <section className="mb-10">
-        <h2 className="text-xl font-bold mb-4">How VeriMarket Works</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { step: '1', title: 'Create or Trade', desc: 'Create prediction markets or trade YES/NO on existing ones.' },
-            { step: '2', title: 'AI Resolution', desc: 'At expiry, AI evaluates bounded evidence from verified APIs.' },
-            { step: '3', title: 'Dispute & Finalize', desc: '24h dispute window with AI arbitration for final outcomes.' },
-          ].map(s => (
-            <Card key={s.step} className="border-border bg-card">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold shrink-0">{s.step}</span>
-                  <div>
-                    <h3 className="font-semibold text-sm mb-1">{s.title}</h3>
-                    <p className="text-xs text-muted-foreground">{s.desc}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       </section>
+
+      <section id="surfaces" className="border-t border-line">
+        <div className="mx-auto max-w-5xl px-6 py-16">
+          <FadeIn>
+            <p className="font-mono text-xs uppercase tracking-widest text-accent">get started</p>
+            <h2 className="mt-2 font-display text-2xl font-bold text-ink">Two ways in</h2>
+          </FadeIn>
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <FadeIn>
+              <Link
+                to="/markets"
+                className="block rounded-sm border border-line bg-surface p-6 transition-colors hover:border-accent"
+              >
+                <p className="font-mono text-xs uppercase tracking-wide text-muted">browse</p>
+                <h3 className="mt-2 font-display text-lg font-bold text-ink">Trade a market</h3>
+                <p className="mt-2 text-sm text-muted">
+                  Take a YES or NO position on any open market and watch it resolve on real evidence.
+                </p>
+                <span className="mt-4 inline-block font-mono text-sm text-accent">Browse markets →</span>
+              </Link>
+            </FadeIn>
+            <FadeIn delay={0.1}>
+              <Link
+                to="/create"
+                className="block rounded-sm border border-line bg-surface p-6 transition-colors hover:border-accent"
+              >
+                <p className="font-mono text-xs uppercase tracking-wide text-muted">create</p>
+                <h3 className="mt-2 font-display text-lg font-bold text-ink">Create a market</h3>
+                <p className="mt-2 text-sm text-muted">
+                  Ask a question with a clean, verifiable resolution source and let the network settle it.
+                </p>
+                <span className="mt-4 inline-block font-mono text-sm text-accent">Create a market →</span>
+              </Link>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-line">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-6 py-8 font-mono text-xs text-muted sm:flex-row sm:justify-between">
+          <span>© {new Date().getFullYear()} VeriMarket</span>
+          <span>Prediction markets, resolved on-chain.</span>
+        </div>
+      </footer>
     </main>
   );
-};
-
-export default Dashboard;
+}
