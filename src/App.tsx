@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { WagmiProvider } from "wagmi";
 
+import { wagmiConfig } from "@/integrations/reown/config";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MotionProvider } from "@/components/motion-provider";
 import { WalletProvider } from "@/integrations/genlayer/WalletProvider";
@@ -19,30 +21,32 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <WalletProvider>
-      <ThemeProvider>
-        <MotionProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<MarketingLayout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/docs" element={<Docs />} />
-              </Route>
-              <Route element={<AppLayout />}>
-                <Route path="/markets" element={<Markets />} />
-                <Route path="/create" element={<CreateMarket />} />
-                <Route path="/market/:id" element={<MarketDetail />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/admin" element={<Admin />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </MotionProvider>
-      </ThemeProvider>
-    </WalletProvider>
-  </QueryClientProvider>
+  <WagmiProvider config={wagmiConfig}>
+    <QueryClientProvider client={queryClient}>
+      <WalletProvider>
+        <ThemeProvider>
+          <MotionProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route element={<MarketingLayout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/docs" element={<Docs />} />
+                </Route>
+                <Route element={<AppLayout />}>
+                  <Route path="/markets" element={<Markets />} />
+                  <Route path="/create" element={<CreateMarket />} />
+                  <Route path="/market/:id" element={<MarketDetail />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/admin" element={<Admin />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </MotionProvider>
+        </ThemeProvider>
+      </WalletProvider>
+    </QueryClientProvider>
+  </WagmiProvider>
 );
 
 export default App;

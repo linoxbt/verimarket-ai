@@ -9,6 +9,11 @@ export const NETWORKS: Record<NetworkKey, { chain: typeof studionet; label: stri
   testnetAsimov: { chain: testnetAsimov, label: "Testnet Asimov", explorer: "https://explorer-asimov.genlayer.com" },
 };
 
+export const NETWORK_BY_CHAIN_ID: Record<number, NetworkKey> = {
+  [studionet.id]: "studionet",
+  [testnetAsimov.id]: "testnetAsimov",
+};
+
 // Set once each network's VeriMarket contract is deployed (see contracts/deployments/*.json).
 export const CONTRACT_ADDRESSES: Record<NetworkKey, Address | null> = {
   studionet: "0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797",
@@ -36,31 +41,19 @@ export function getContractAddress(network: NetworkKey): Address {
   return address;
 }
 
-function getEthereumProvider() {
-  return typeof window !== "undefined" ? (window as unknown as { ethereum?: unknown }).ethereum : undefined;
+// Set by WalletProvider whenever the connected wagmi/Reown connector changes, so
+// createGenLayerClient can sign through whatever wallet (injected or WalletConnect) is
+// actually connected without every call site needing to thread the provider through.
+let activeProvider: unknown = null;
+
+export function setActiveProvider(provider: unknown) {
+  activeProvider = provider;
 }
 
 export function createGenLayerClient(network: NetworkKey, account?: Address) {
   return createClient({
     chain: NETWORKS[network].chain,
     account,
-    provider: getEthereumProvider() as never,
+    provider: activeProvider as never,
   });
-}
-
-export async function connectWallet(): Promise<Address> {
-  const ethereum = getEthereumProvider() as { request: (args: { method: string }) => Promise<string[]> } | undefined;
-  if (!ethereum) {
-    throw new Error("No wallet found. Install MetaMask (or a compatible wallet) to continue.");
-  }
-  const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-  if (!accounts?.[0]) {
-    throw new Error("No account returned by wallet");
-  }
-  return accounts[0] as Address;
-}
-
-export async function switchToNetwork(network: NetworkKey): Promise<void> {
-  const client = createGenLayerClient(network);
-  await client.connect(network);
 }
