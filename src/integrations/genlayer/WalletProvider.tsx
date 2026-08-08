@@ -24,8 +24,18 @@ interface WalletContextValue {
 
 const WalletContext = createContext<WalletContextValue | null>(null);
 
+// useAppKit() throws synchronously if Reown AppKit failed to initialize (see the try/catch
+// fallback in integrations/reown/config.ts) — degrade to a no-op instead of crashing the app.
+function useSafeAppKit() {
+  try {
+    return useAppKit();
+  } catch {
+    return { open: async () => {}, close: async () => {} };
+  }
+}
+
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const { open } = useAppKit();
+  const { open } = useSafeAppKit();
   const { address, chainId, connector, isConnecting } = useAccount();
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const { switchChainAsync } = useSwitchChain();
