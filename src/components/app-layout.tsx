@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Wordmark } from "@/components/wordmark";
@@ -8,7 +8,9 @@ function MobileTopBar() {
   const { setMobileOpen } = useSidebar();
   return (
     <div className="flex items-center justify-between border-b border-line px-4 py-3 md:hidden">
-      <Wordmark />
+      <Link to="/">
+        <Wordmark />
+      </Link>
       <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open menu">
         <Menu size={20} />
       </button>

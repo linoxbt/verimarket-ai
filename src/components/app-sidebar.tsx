@@ -57,7 +57,7 @@ export function AppSidebar() {
         )}
       >
         <div className="flex items-center justify-between border-b border-line px-4 py-4">
-          {collapsed ? <LogoMark size={20} /> : <Wordmark />}
+          <Link to="/">{collapsed ? <LogoMark size={20} /> : <Wordmark />}</Link>
         </div>
         <div className="flex-1 py-4">
           <NavLinks collapsed={collapsed} />
@@ -86,7 +86,9 @@ export function AppSidebar() {
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
           <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-surface">
             <div className="flex items-center justify-between border-b border-line px-4 py-4">
-              <Wordmark />
+              <Link to="/" onClick={() => setMobileOpen(false)}>
+                <Wordmark />
+              </Link>
               <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close menu">
                 <X size={18} />
               </button>
