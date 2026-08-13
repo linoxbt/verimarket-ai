@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Wordmark } from "@/components/wordmark";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { NetworkSwitcher } from "@/components/network-switcher";
 import { WalletConnectButton } from "@/components/wallet-connect-button";
 
@@ -21,7 +20,6 @@ export function SiteHeader() {
           <div className="hidden sm:block">
             <NetworkSwitcher />
           </div>
-          <ThemeToggle />
           <WalletConnectButton />
           <Link
             to="/markets"
