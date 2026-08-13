@@ -51,13 +51,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [chainId]);
 
   // Feed whatever provider the active connector (injected or WalletConnect) exposes to
-  // genlayer-js, so it can sign through it regardless of connector type.
+  // genlayer-js, so it can sign through it regardless of connector type. Some connector
+  // states (mid-reconnect, an unsupported connector shape) don't implement getProvider —
+  // guard against that instead of crashing the whole app over a background sync.
   useEffect(() => {
     let cancelled = false;
-    if (connector) {
-      connector.getProvider().then((provider) => {
-        if (!cancelled) setActiveProvider(provider);
-      });
+    if (connector && typeof connector.getProvider === "function") {
+      connector
+        .getProvider()
+        .then((provider) => {
+          if (!cancelled) setActiveProvider(provider);
+        })
+        .catch(() => {
+          if (!cancelled) setActiveProvider(null);
+        });
     } else {
       setActiveProvider(null);
     }
