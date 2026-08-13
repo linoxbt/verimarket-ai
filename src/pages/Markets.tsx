@@ -69,8 +69,9 @@ export default function Markets() {
     const visible = markets.filter((m) => !m.hidden);
     const open = visible.filter((m) => m.status === "open").length;
     const inDispute = visible.filter((m) => m.status === "resolving" || m.status === "disputed").length;
+    const settled = visible.filter((m) => m.status === "finalized").length;
     const volume = visible.reduce((sum, m) => sum + m.yes_pool + m.no_pool, 0n);
-    return { total: visible.length, open, inDispute, volume };
+    return { total: visible.length, open, inDispute, settled, volume };
   }, [markets]);
 
   return (
@@ -78,7 +79,7 @@ export default function Markets() {
       <p className="font-mono text-xs uppercase tracking-widest text-accent">markets</p>
       <h1 className="mt-1 font-display text-2xl font-bold text-ink">Browse markets</h1>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="p-4">
           <p className="font-mono text-xs uppercase tracking-wide text-muted">Total Markets</p>
           <p className="mt-1 font-display text-2xl font-bold text-ink">{stats.total}</p>
@@ -90,6 +91,10 @@ export default function Markets() {
         <Card className="p-4">
           <p className="font-mono text-xs uppercase tracking-wide text-muted">Resolving / Disputed</p>
           <p className="mt-1 font-display text-2xl font-bold text-partial">{stats.inDispute}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="font-mono text-xs uppercase tracking-wide text-muted">Settled</p>
+          <p className="mt-1 font-display text-2xl font-bold text-muted">{stats.settled}</p>
         </Card>
         <Card className="p-4">
           <p className="font-mono text-xs uppercase tracking-wide text-muted">Total Volume</p>
