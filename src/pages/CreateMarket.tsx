@@ -69,8 +69,8 @@ export default function CreateMarket() {
         expiry: toUnixTimestamp(expiry),
       });
       navigate("/markets");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create market");
+    } catch {
+      // toasted by useCreateMarket's onError
     }
   }
 

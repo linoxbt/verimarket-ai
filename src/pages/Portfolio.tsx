@@ -1,16 +1,28 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Wallet } from "lucide-react";
+import { ArrowRight, ExternalLink, Wallet } from "lucide-react";
 import { useWallet } from "@/integrations/genlayer/WalletProvider";
 import { useUserTrades } from "@/hooks/useTrades";
 import { useMarkets } from "@/hooks/useMarkets";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MarketCard } from "@/components/MarketCard";
+import { cn } from "@/lib/utils";
 import { formatGen, truncateAddress } from "@/lib/format";
+import { explorerAddressUrl } from "@/lib/explorer";
+
+type Tab = "trades" | "created";
 
 export default function Portfolio() {
-  const { address, connect, connecting } = useWallet();
+  const { address, network, connect, connecting } = useWallet();
   const { data: trades = [], isLoading } = useUserTrades(address ?? undefined);
   const { data: markets = [] } = useMarkets();
+  const [tab, setTab] = useState<Tab>("trades");
+
+  const created = useMemo(
+    () => markets.filter((m) => !m.hidden && m.creator.toLowerCase() === (address ?? "").toLowerCase()),
+    [markets, address],
+  );
 
   if (!address) {
     return (
@@ -43,7 +55,15 @@ export default function Portfolio() {
   return (
     <div>
       <p className="font-mono text-xs uppercase tracking-widest text-accent">portfolio</p>
-      <h1 className="mt-1 font-display text-2xl font-bold text-ink">{truncateAddress(address)}</h1>
+      <a
+        href={explorerAddressUrl(network, address)}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-1 inline-flex items-center gap-2 font-display text-2xl font-bold text-ink hover:text-accent"
+      >
+        {truncateAddress(address)}
+        <ExternalLink size={16} className="text-muted" />
+      </a>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Card>
@@ -56,34 +76,77 @@ export default function Portfolio() {
         </Card>
       </div>
 
-      <section className="mt-8">
-        <h2 className="font-display text-lg font-bold text-ink">Active positions ({active.length})</h2>
-        {isLoading ? (
-          <p className="mt-3 font-mono text-sm text-muted">Loading…</p>
-        ) : active.length === 0 ? (
-          <Card className="mt-3 text-center">
-            <p className="text-sm text-muted">No active positions yet.</p>
-            <Link to="/markets" className="mt-3 inline-flex items-center gap-1 font-mono text-sm text-accent">
-              Browse markets <ArrowRight size={13} />
-            </Link>
-          </Card>
-        ) : (
-          <div className="mt-3 flex flex-col gap-2">
-            {active.map((trade, i) => (
-              <TradeRow key={i} trade={trade} question={marketById.get(trade.market_id)?.question} status={marketById.get(trade.market_id)?.status} />
-            ))}
-          </div>
-        )}
-      </section>
+      <div className="mt-8 flex gap-2 border-b border-line">
+        {(
+          [
+            { key: "trades", label: `Trades (${trades.length})` },
+            { key: "created", label: `Markets I created (${created.length})` },
+          ] as { key: Tab; label: string }[]
+        ).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={cn(
+              "-mb-px border-b-2 px-3 py-2 font-mono text-xs uppercase tracking-wide transition-colors",
+              tab === t.key ? "border-accent text-accent" : "border-transparent text-muted hover:text-ink",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {settled.length > 0 && (
-        <section className="mt-8">
-          <h2 className="font-display text-lg font-bold text-ink">History ({settled.length})</h2>
-          <div className="mt-3 flex flex-col gap-2">
-            {settled.map((trade, i) => (
-              <TradeRow key={i} trade={trade} question={marketById.get(trade.market_id)?.question} status={marketById.get(trade.market_id)?.status} />
-            ))}
-          </div>
+      {tab === "trades" && (
+        <>
+          <section className="mt-6">
+            <h2 className="font-display text-lg font-bold text-ink">Active positions ({active.length})</h2>
+            {isLoading ? (
+              <p className="mt-3 font-mono text-sm text-muted">Loading…</p>
+            ) : active.length === 0 ? (
+              <Card className="mt-3 text-center">
+                <p className="text-sm text-muted">No active positions yet.</p>
+                <Link to="/markets" className="mt-3 inline-flex items-center gap-1 font-mono text-sm text-accent">
+                  Browse markets <ArrowRight size={13} />
+                </Link>
+              </Card>
+            ) : (
+              <div className="mt-3 flex flex-col gap-2">
+                {active.map((trade, i) => (
+                  <TradeRow key={i} trade={trade} question={marketById.get(trade.market_id)?.question} status={marketById.get(trade.market_id)?.status} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {settled.length > 0 && (
+            <section className="mt-8">
+              <h2 className="font-display text-lg font-bold text-ink">History ({settled.length})</h2>
+              <div className="mt-3 flex flex-col gap-2">
+                {settled.map((trade, i) => (
+                  <TradeRow key={i} trade={trade} question={marketById.get(trade.market_id)?.question} status={marketById.get(trade.market_id)?.status} />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {tab === "created" && (
+        <section className="mt-6">
+          {created.length === 0 ? (
+            <Card className="text-center">
+              <p className="text-sm text-muted">You haven't created any markets yet.</p>
+              <Link to="/create" className="mt-3 inline-flex items-center gap-1 font-mono text-sm text-accent">
+                Create a market <ArrowRight size={13} />
+              </Link>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {created.map((market) => (
+                <MarketCard key={market.id} market={market} />
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>

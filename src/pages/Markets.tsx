@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { MarketCard } from "@/components/MarketCard";
 import { Card } from "@/components/ui/card";
 import { useMarkets } from "@/hooks/useMarkets";
 import { cn } from "@/lib/utils";
 import { formatGen } from "@/lib/format";
-import type { MarketCategory } from "@/integrations/genlayer/types";
+import type { Market, MarketCategory } from "@/integrations/genlayer/types";
 
 const CATEGORIES: { label: string; value: MarketCategory | "all" }[] = [
   { label: "All", value: "all" },
@@ -15,10 +15,38 @@ const CATEGORIES: { label: string; value: MarketCategory | "all" }[] = [
   { label: "Weather", value: "weather" },
 ];
 
+type SortKey = "pinned" | "newest" | "volume" | "expiring";
+
+const SORT_OPTIONS: { label: string; value: SortKey }[] = [
+  { label: "Pinned first", value: "pinned" },
+  { label: "Newest", value: "newest" },
+  { label: "Highest volume", value: "volume" },
+  { label: "Expiring soon", value: "expiring" },
+];
+
+const PAGE_SIZE = 12;
+
+function sortMarkets(markets: Market[], sort: SortKey): Market[] {
+  const sorted = [...markets];
+  switch (sort) {
+    case "newest":
+      return sorted.sort((a, b) => b.id - a.id);
+    case "volume":
+      return sorted.sort((a, b) => Number(b.yes_pool + b.no_pool - (a.yes_pool + a.no_pool)));
+    case "expiring":
+      return sorted.sort((a, b) => a.expiry - b.expiry);
+    case "pinned":
+    default:
+      return sorted.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.id - a.id);
+  }
+}
+
 export default function Markets() {
   const { data: markets = [], isLoading } = useMarkets();
   const [category, setCategory] = useState<MarketCategory | "all">("all");
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("pinned");
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const visible = markets.filter((m) => !m.hidden);
@@ -27,9 +55,15 @@ export default function Markets() {
       const matchSearch = m.question.toLowerCase().includes(search.toLowerCase());
       return matchCategory && matchSearch;
     });
-    result.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.id - a.id);
-    return result;
-  }, [markets, category, search]);
+    return sortMarkets(result, sort);
+  }, [markets, category, search, sort]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [category, search, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stats = useMemo(() => {
     const visible = markets.filter((m) => !m.hidden);
@@ -81,14 +115,27 @@ export default function Markets() {
           ))}
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            placeholder="Search markets…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-sm border border-line bg-surface py-2 pl-8 pr-3 font-mono text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
-          />
+        <div className="flex gap-2">
+          <div className="relative w-full sm:w-56">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              placeholder="Search markets…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-sm border border-line bg-surface py-2 pl-8 pr-3 font-mono text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+            />
+          </div>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className="rounded-sm border border-line bg-surface px-2 py-2 font-mono text-xs text-ink hover:border-accent focus:border-accent focus:outline-none"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -102,9 +149,31 @@ export default function Markets() {
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((market) => (
+            {paged.map((market) => (
               <MarketCard key={market.id} market={market} />
             ))}
+          </div>
+        )}
+
+        {!isLoading && pageCount > 1 && (
+          <div className="mt-6 flex items-center justify-between">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex items-center gap-1 rounded-sm border border-line px-3 py-1.5 font-mono text-xs text-muted hover:border-accent hover:text-accent disabled:opacity-40"
+            >
+              <ChevronLeft size={13} /> Prev
+            </button>
+            <span className="font-mono text-xs text-muted">
+              Page {page} of {pageCount}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              disabled={page === pageCount}
+              className="flex items-center gap-1 rounded-sm border border-line px-3 py-1.5 font-mono text-xs text-muted hover:border-accent hover:text-accent disabled:opacity-40"
+            >
+              Next <ChevronRight size={13} />
+            </button>
           </div>
         )}
       </div>

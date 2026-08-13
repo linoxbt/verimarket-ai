@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { useMarket, usePlaceTrade } from "@/hooks/useMarkets";
 import { useArbitrate, useArbitration, useClaimPayout, useDispute, useFileDispute, useResolution, useResolveMarket } from "@/hooks/useResolution";
+import { useMarketTrades } from "@/hooks/useTrades";
 import { useWallet } from "@/integrations/genlayer/WalletProvider";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TradeActivityFeed } from "@/components/TradeActivityFeed";
+import { OddsChart } from "@/components/OddsChart";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { formatExpiry, formatGen, relativeTime, truncateAddress, yesProbability } from "@/lib/format";
+import { explorerAddressUrl } from "@/lib/explorer";
 
 const STATUS_TONE = {
   open: "pass",
@@ -20,12 +24,13 @@ const STATUS_TONE = {
 export default function MarketDetail() {
   const { id } = useParams();
   const marketId = id !== undefined ? Number(id) : undefined;
-  const { address } = useWallet();
+  const { address, network } = useWallet();
 
   const { data: market, isLoading } = useMarket(marketId);
   const { data: resolution } = useResolution(marketId);
   const { data: dispute } = useDispute(marketId);
   const { data: arbitration } = useArbitration(marketId);
+  const { data: trades = [] } = useMarketTrades(marketId);
 
   const placeTrade = usePlaceTrade();
   const resolveMarket = useResolveMarket();
@@ -37,7 +42,8 @@ export default function MarketDetail() {
   const [amount, setAmount] = useState("");
   const [disputeEvidence, setDisputeEvidence] = useState("");
   const [disputeBond, setDisputeBond] = useState("");
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmTrade, setConfirmTrade] = useState(false);
+  const [confirmDispute, setConfirmDispute] = useState(false);
 
   if (isLoading) {
     return <p className="font-mono text-sm text-muted">Loading market…</p>;
@@ -58,13 +64,13 @@ export default function MarketDetail() {
   const now = Date.now() / 1000;
   const isExpired = now >= market.expiry;
   const disputeWindowOpen = resolution ? now < resolution.dispute_deadline : false;
+  const disputeDeadlineSoon = resolution ? resolution.dispute_deadline - now < 2 * 60 * 60 : false;
 
   async function runAction(fn: () => Promise<unknown>) {
-    setActionError(null);
     try {
       await fn();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Transaction failed");
+    } catch {
+      // surfaced via toast by the underlying mutation's onError
     }
   }
 
@@ -136,13 +142,7 @@ export default function MarketDetail() {
               />
               <Button
                 disabled={!amount || Number(amount) <= 0 || placeTrade.isPending || !address}
-                onClick={() =>
-                  runAction(async () => {
-                    await placeTrade.mutateAsync({ marketId: market.id, position, amountGen: amount });
-                    setPosition(null);
-                    setAmount("");
-                  })
-                }
+                onClick={() => (address ? setConfirmTrade(true) : undefined)}
               >
                 {!address ? "Connect wallet to trade" : placeTrade.isPending ? "Submitting…" : `Buy ${position.toUpperCase()}`}
               </Button>
@@ -176,6 +176,17 @@ export default function MarketDetail() {
         <p className="mt-3 font-mono text-[11px] text-muted">
           Source: <span className="text-ink">{market.category} / {market.source_query}</span>
         </p>
+        <p className="mt-1 font-mono text-[11px] text-muted">
+          Created by{" "}
+          <a
+            href={explorerAddressUrl(network, market.creator)}
+            target="_blank"
+            rel="noreferrer"
+            className="text-ink hover:text-accent"
+          >
+            {truncateAddress(market.creator)}
+          </a>
+        </p>
       </Card>
 
       {resolution && (
@@ -202,9 +213,16 @@ export default function MarketDetail() {
 
           {market.status === "resolving" && disputeWindowOpen && (
             <div className="mt-4 border-t border-line pt-4">
-              <p className="font-mono text-xs uppercase tracking-wide text-fail">
-                Dispute window open — closes {relativeTime(resolution.dispute_deadline)}
-              </p>
+              <div
+                className={`flex items-center gap-2 rounded-sm border px-3 py-2 ${
+                  disputeDeadlineSoon ? "border-fail bg-fail/10" : "border-line"
+                }`}
+              >
+                <AlertTriangle size={14} className={disputeDeadlineSoon ? "text-fail" : "text-muted"} />
+                <p className={`font-mono text-xs uppercase tracking-wide ${disputeDeadlineSoon ? "text-fail" : "text-muted"}`}>
+                  Dispute window open — closes {formatExpiry(resolution.dispute_deadline)}
+                </p>
+              </div>
               <div className="mt-3 flex flex-col gap-3">
                 <textarea
                   placeholder="Evidence supporting your dispute"
@@ -225,11 +243,7 @@ export default function MarketDetail() {
                 <Button
                   variant="secondary"
                   disabled={!disputeEvidence || !disputeBond || fileDispute.isPending || !address}
-                  onClick={() =>
-                    runAction(() =>
-                      fileDispute.mutateAsync({ marketId: market.id, evidence: disputeEvidence, bondGen: disputeBond }),
-                    )
-                  }
+                  onClick={() => setConfirmDispute(true)}
                 >
                   {fileDispute.isPending ? "Filing…" : "File Dispute"}
                 </Button>
@@ -254,8 +268,16 @@ export default function MarketDetail() {
           <p className="font-mono text-xs uppercase tracking-wide text-fail">Dispute filed</p>
           <p className="mt-2 text-sm text-ink">{dispute.evidence}</p>
           <p className="mt-2 font-mono text-[11px] text-muted">
-            By {truncateAddress(dispute.disputer)} · Bond {formatGen(dispute.bond_amount)} ·{" "}
-            {relativeTime(dispute.filed_at)}
+            By{" "}
+            <a
+              href={explorerAddressUrl(network, dispute.disputer)}
+              target="_blank"
+              rel="noreferrer"
+              className="text-ink hover:text-accent"
+            >
+              {truncateAddress(dispute.disputer)}
+            </a>{" "}
+            · Bond {formatGen(dispute.bond_amount)} · {relativeTime(dispute.filed_at)}
           </p>
 
           {market.status === "disputed" && !arbitration && (
@@ -297,9 +319,42 @@ export default function MarketDetail() {
         </Card>
       )}
 
-      {actionError && <p className="font-mono text-xs text-fail">{actionError}</p>}
+      <OddsChart trades={trades} />
 
       <TradeActivityFeed marketId={market.id} />
+
+      <ConfirmDialog
+        open={confirmTrade}
+        title={`Confirm ${position?.toUpperCase()} trade`}
+        description={`You're about to send ${amount || "0"} GEN to back ${position?.toUpperCase()} on "${market.question}". This transaction is irreversible.`}
+        confirmLabel="Send trade"
+        pending={placeTrade.isPending}
+        onCancel={() => setConfirmTrade(false)}
+        onConfirm={() =>
+          runAction(async () => {
+            if (!position) return;
+            await placeTrade.mutateAsync({ marketId: market.id, position, amountGen: amount });
+            setPosition(null);
+            setAmount("");
+            setConfirmTrade(false);
+          })
+        }
+      />
+
+      <ConfirmDialog
+        open={confirmDispute}
+        title="Confirm dispute"
+        description={`You're about to send a bond of ${disputeBond || "0"} GEN to file this dispute and trigger arbitration. This transaction is irreversible.`}
+        confirmLabel="File dispute"
+        pending={fileDispute.isPending}
+        onCancel={() => setConfirmDispute(false)}
+        onConfirm={() =>
+          runAction(async () => {
+            await fileDispute.mutateAsync({ marketId: market.id, evidence: disputeEvidence, bondGen: disputeBond });
+            setConfirmDispute(false);
+          })
+        }
+      />
     </div>
   );
 }

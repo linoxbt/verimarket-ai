@@ -168,7 +168,13 @@ async function writeAndWait(
     args: args as never[],
     value,
   });
-  return client.waitForTransactionReceipt({ hash: txHash, interval: 4000, retries: 40 });
+  const receipt = await client.waitForTransactionReceipt({ hash: txHash, interval: 4000, retries: 40 });
+  return { hash: txHash as string, receipt };
+}
+
+export async function getBalance(network: NetworkKey, address: Address): Promise<bigint> {
+  const client = createGenLayerClient(network);
+  return client.getBalance({ address });
 }
 
 export async function createMarket(

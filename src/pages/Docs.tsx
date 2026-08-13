@@ -1,4 +1,5 @@
 import { CONTRACT_ADDRESSES } from "@/integrations/genlayer/client";
+import { explorerAddressUrl } from "@/lib/explorer";
 
 const METHODS = [
   { name: "create_market(question, category, source_query, resolution_criteria, expiry)", kind: "write" },
@@ -94,13 +95,33 @@ export default function Docs() {
         <div className="mt-4 divide-y divide-line rounded-sm border border-line">
           <div className="flex items-center justify-between p-4">
             <span className="font-mono text-sm text-ink">Studionet</span>
-            <code className="font-mono text-xs text-accent">{CONTRACT_ADDRESSES.studionet}</code>
+            {CONTRACT_ADDRESSES.studionet ? (
+              <a
+                href={explorerAddressUrl("studionet", CONTRACT_ADDRESSES.studionet)}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-xs text-accent hover:opacity-80"
+              >
+                {CONTRACT_ADDRESSES.studionet}
+              </a>
+            ) : (
+              <code className="font-mono text-xs text-muted">not yet deployed</code>
+            )}
           </div>
           <div className="flex items-center justify-between p-4">
             <span className="font-mono text-sm text-ink">Testnet Asimov</span>
-            <code className="font-mono text-xs text-muted">
-              {CONTRACT_ADDRESSES.testnetAsimov ?? "not yet deployed"}
-            </code>
+            {CONTRACT_ADDRESSES.testnetAsimov ? (
+              <a
+                href={explorerAddressUrl("testnetAsimov", CONTRACT_ADDRESSES.testnetAsimov)}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-xs text-accent hover:opacity-80"
+              >
+                {CONTRACT_ADDRESSES.testnetAsimov}
+              </a>
+            ) : (
+              <code className="font-mono text-xs text-muted">not yet deployed</code>
+            )}
           </div>
         </div>
       </section>
