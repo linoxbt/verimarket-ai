@@ -18,6 +18,7 @@ is decided by real evidence and real multi-validator LLM consensus, not a single
 ## Table of contents
 
 - [Overview](#overview)
+- [Product features](#product-features)
 - [How resolution actually works](#how-resolution-actually-works)
 - [Contract reference](#contract-reference)
 - [Evidence sources](#evidence-sources)
@@ -43,6 +44,25 @@ final, binding outcome. Winners claim their share of the pool once the market is
 
 There is nothing running behind the contract — no cron job, no oracle relay, no indexer. The frontend
 talks to the deployed contract directly.
+
+## Product features
+
+All of the below is built entirely on top of the contract reads/writes already described above — no
+separate backend, no new contract methods:
+
+- **Notifications** — a toast on every transaction (success or failure, with a link to the transaction on
+  the network explorer), plus a background watcher that alerts you when a market you created or traded in
+  changes status (resolved, disputed, finalized).
+- **Wallet balance** — shown in the header, the sidebar, and on the Profile page, polled live.
+- **Odds over time** — a chart on each market page, computed client-side from real trade history.
+- **Block explorer links** — every address and transaction hash in the app links out to the network's
+  explorer.
+- **Sort & pagination** — markets can be sorted by volume, expiry, or recency, and browsed in pages.
+- **Markets I created** — a dedicated tab on Portfolio, alongside trade history.
+- **Confirmation dialogs** — a review step before trading and filing a dispute, since both send real GEN
+  and can't be undone.
+- **Profile page** — address, balance, network switcher, theme toggle, and help/support links in one
+  place.
 
 ## How resolution actually works
 
@@ -74,6 +94,11 @@ free text, which would be impossible to guarantee across independent LLM calls. 
 same mechanism a second time, with the disputer's evidence and the original reasoning folded into the
 prompt, for a final ruling that overrides the initial resolution.
 
+Filing a dispute requires posting a GEN bond via `file_dispute`. `arbitrate` disposes of it based on the
+final ruling: if arbitration overturns the original resolution, the bond is refunded in full to the
+disputer; if it confirms the original outcome, the bond is forfeited to the contract owner — the cost of a
+failed dispute.
+
 ## Contract reference
 
 All state lives in a single `VeriMarket` contract.
@@ -84,7 +109,7 @@ All state lives in a single `VeriMarket` contract.
 | `place_trade(market_id, position)` | write · payable | Stakes GEN on `"yes"` or `"no"` while the market is open. |
 | `resolve_market(market_id)` | write | Callable by anyone once expiry has passed. Runs the leader/validator resolution above and opens the 24h dispute window. |
 | `file_dispute(market_id, evidence)` | write · payable | Bonds a dispute with new evidence during the dispute window. |
-| `arbitrate(market_id)` | write | Re-resolves a disputed market, weighing the original evidence and reasoning against the disputer's evidence, for a final outcome. |
+| `arbitrate(market_id)` | write | Re-resolves a disputed market, weighing the original evidence and reasoning against the disputer's evidence, for a final outcome. Refunds the dispute bond to the disputer if overturned, otherwise forfeits it to the contract owner. |
 | `claim_payout(market_id)` | write | Pays out the caller's pro-rata share of the pool if they backed the winning side. |
 | `pin_market(market_id, pinned)` / `hide_market(market_id, hidden)` | write · owner-only | Curate the market list. |
 | `get_market` / `get_all_markets` / `get_market_trades` / `get_user_trades(address)` | view | Market and trade data. |
@@ -157,9 +182,10 @@ src/
     genlayer/                 client.ts (network/client setup), contract.ts (typed read/write calls),
                                WalletProvider.tsx (wagmi/AppKit → genlayer-js bridge)
     reown/config.ts            AppKit + wagmi configuration
-  hooks/                      useMarkets, useTrades, useResolution, useOwner — React Query wrappers
-  pages/                      Dashboard, Markets, MarketDetail, CreateMarket, Portfolio, Admin, Docs
-  components/                 hand-built UI primitives + layout (site header, app sidebar, cards, badges)
+  hooks/                      useMarkets, useTrades, useResolution, useOwner, useBalance — React Query wrappers
+  pages/                      Dashboard, Markets, MarketDetail, CreateMarket, Portfolio, Profile, Admin, Docs
+  components/                 hand-built UI primitives + layout (site header, app sidebar, cards, badges,
+                               toast, confirm-dialog, market-watcher, OddsChart)
 ```
 
 ## Getting started
@@ -228,7 +254,8 @@ already baked into the build, nothing else needs configuring per-deploy.
 ## Known limitations
 
 - **Polling, not push.** There's no chain-side subscription mechanism for contract storage, so "live"
-  data (market list, trade feed) is short-interval polling via React Query rather than a realtime feed.
+  data (market list, trade feed, the status-change watcher behind notifications) is short-interval polling
+  via React Query rather than a realtime feed.
 - **Testnet Asimov is not gasless.** Unlike Studionet, transactions there cost real (testnet) GEN — fund
   an account via the [testnet faucet](https://testnet-faucet.genlayer.foundation) before writing to it.
 - **Bundle size.** Reown AppKit pulls in a fairly large dependency tree (swap/onramp/send UI chunks are

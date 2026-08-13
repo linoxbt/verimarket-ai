@@ -13,6 +13,41 @@ const METHODS = [
   { name: "get_resolution / get_dispute / get_arbitration", kind: "view" },
 ];
 
+const FEATURES = [
+  {
+    name: "Notifications",
+    note: "A toast on every transaction (success or failure, with a link to the transaction), plus a background watcher that alerts you when a market you created or traded in changes status.",
+  },
+  {
+    name: "Wallet balance",
+    note: "Shown in the header, the sidebar, and on your Profile page — polled live from the connected network.",
+  },
+  {
+    name: "Odds over time",
+    note: "A chart on each market page built from real trade history — no separate price-feed contract needed.",
+  },
+  {
+    name: "Block explorer links",
+    note: "Every address and transaction hash in the app links out to the network's explorer.",
+  },
+  {
+    name: "Sort, search & pagination",
+    note: "Markets can be sorted by volume, expiry, or recency, and browsed in pages instead of one long scroll.",
+  },
+  {
+    name: "Markets I created",
+    note: "A dedicated tab on Portfolio, alongside your trade history.",
+  },
+  {
+    name: "Confirmation dialogs",
+    note: "A review step before trades and disputes — both send real GEN and can't be undone.",
+  },
+  {
+    name: "Profile page",
+    note: "Address, balance, network switcher, theme, and help/support links in one place.",
+  },
+];
+
 const SOURCES = [
   { category: "crypto", source: "CoinGecko", note: "public API, no key required" },
   { category: "sports", source: "TheSportsDB", note: "public test key" },
@@ -57,6 +92,27 @@ export default function Docs() {
           time with the disputer's evidence added to the prompt alongside the original evidence and
           reasoning.
         </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          Filing a dispute requires posting a GEN bond. If arbitration overturns the original resolution —
+          the dispute was right — the bond is refunded in full to the disputer. If arbitration confirms the
+          original outcome, the bond is forfeited to the contract owner, the cost of a failed dispute.
+        </p>
+      </section>
+
+      <section className="mt-10 border-t border-line pt-8">
+        <h2 className="font-display text-xl font-bold text-ink">App features</h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          Everything below is built on top of the contract reads/writes above — no new backend, no new
+          contract methods.
+        </p>
+        <div className="mt-4 divide-y divide-line rounded-sm border border-line">
+          {FEATURES.map((f) => (
+            <div key={f.name} className="flex flex-col gap-1 p-4">
+              <span className="font-mono text-sm text-ink">{f.name}</span>
+              <span className="font-mono text-xs text-muted">{f.note}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="mt-10 border-t border-line pt-8">
