@@ -1,7 +1,7 @@
 {
-  "contract_address": "0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797",
+  "contract_address": "0xF31A718EA84e7513821BD018863E73784e6373d2",
   "network": "studionet",
   "chain_id": 61999,
   "rpc": "https://studio.genlayer.com/api",
-  "notes": "Deployed and fully exercised end-to-end during integration testing: create_market -> place_trade(yes/no) -> resolve_market (real consensus) -> file_dispute -> arbitrate (real consensus) -> claim_payout. Market id 0, final outcome 'yes'."
+  "notes": "Redeployed to fix a bug in the original contract (0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797): dispute bonds sent via file_dispute were never paid out anywhere in arbitrate(), permanently stuck in the contract. arbitrate() now refunds the bond to the disputer if arbitration overturns the original resolution, otherwise forfeits it to the contract owner. Deploy tx 0x8c312ec363abcce2ad81b7ee24dfb6eea3d9fc45ada8956f8b8b2dd8697de4f0, MAJORITY_AGREE. Owner key saved to studionet.keys.json (gitignored)."
 }

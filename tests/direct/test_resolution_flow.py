@@ -143,3 +143,52 @@ def test_arbitrate_rejects_when_not_disputed(direct_vm, direct_deploy, direct_al
     direct_vm.sender = direct_alice
     with direct_vm.expect_revert():
         contract.arbitrate(market_id)
+
+
+def test_arbitrate_refunds_bond_when_dispute_overturns_resolution(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = direct_deploy("contracts/veri_market.py")
+    market_id = _create_market(contract, direct_vm, direct_alice)
+    _warp_past(direct_vm)
+    _mock_evidence(direct_vm, outcome="yes", confidence=70)
+    direct_vm.sender = direct_alice
+    contract.resolve_market(market_id)
+
+    direct_vm.sender = direct_bob
+    direct_vm.value = 2000
+    contract.file_dispute(market_id, "the price dropped after the snapshot")
+
+    direct_vm.clear_mocks()
+    _mock_evidence(direct_vm, outcome="no", confidence=90)
+    direct_vm.sender = direct_alice
+    contract.arbitrate(market_id)  # outcome flips yes -> no: dispute was right, bond refunded to Bob
+
+    market = contract.get_market(market_id)
+    assert market["status"] == "finalized"
+    arbitration = contract.get_arbitration(market_id)
+    assert arbitration["outcome"] == "no"
+
+
+def test_arbitrate_forfeits_bond_to_owner_when_dispute_fails(direct_vm, direct_deploy, direct_alice, direct_bob, direct_owner):
+    direct_vm.sender = direct_owner
+    contract = direct_deploy("contracts/veri_market.py")
+    market_id = contract.create_market(
+        "Will BTC exceed $100k?", "crypto", "bitcoin", "criteria", future_expiry(30)
+    )
+    _warp_past(direct_vm)
+    _mock_evidence(direct_vm, outcome="yes", confidence=70)
+    direct_vm.sender = direct_owner
+    contract.resolve_market(market_id)
+
+    direct_vm.sender = direct_bob
+    direct_vm.value = 2000
+    contract.file_dispute(market_id, "disagree, but wrong")
+
+    direct_vm.clear_mocks()
+    _mock_evidence(direct_vm, outcome="yes", confidence=95)
+    direct_vm.sender = direct_alice
+    contract.arbitrate(market_id)  # outcome confirmed yes: dispute was wrong, bond forfeited to owner
+
+    market = contract.get_market(market_id)
+    assert market["status"] == "finalized"
+    arbitration = contract.get_arbitration(market_id)
+    assert arbitration["outcome"] == "yes"

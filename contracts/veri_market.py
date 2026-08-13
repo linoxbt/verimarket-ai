@@ -381,6 +381,14 @@ Weigh the original evidence AND the disputer's new evidence together and give a 
         )
         market.status = "finalized"
 
+        # Dispute bond: refunded to the disputer if arbitration overturns the original
+        # resolution (the dispute was right), otherwise forfeited to the contract owner
+        # as the cost of a failed dispute -- without this the bond had nowhere to go.
+        if decision["outcome"] != resolution.outcome:
+            _Recipient(dispute.disputer).emit_transfer(value=dispute.bond_amount)
+        else:
+            _Recipient(self.owner).emit_transfer(value=dispute.bond_amount)
+
     # ------------------------------------------------------------------
     # Payouts
     # ------------------------------------------------------------------

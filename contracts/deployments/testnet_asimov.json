@@ -1,7 +1,7 @@
 {
-  "contract_address": "0x42919CA9E6DEC6d68D41F032000A26fc598faBD2",
+  "contract_address": "0xa9D38077aA11707faB8D98c7333f4037C84575fa",
   "network": "testnetAsimov",
   "chain_id": 4221,
   "rpc": "https://rpc-asimov.genlayer.com",
-  "notes": "Deployed and smoke-tested: create_market + place_trade confirmed on-chain (market id 0, 'Will BTC exceed $1?', yes_pool credited). Deploy account funded by the user via the testnet faucet + a manual top-up."
+  "notes": "Redeployed to fix a bug in the previous contract (0x42919CA9E6DEC6d68D41F032000A26fc598faBD2): dispute bonds sent via file_dispute were never paid out anywhere in arbitrate(), permanently stuck in the contract. arbitrate() now refunds the bond to the disputer if arbitration overturns the original resolution, otherwise forfeits it to the contract owner. Deployed with the same funded deployer account (0x5cc9c8Dd8811aba73E8c73C0e4735015697d1146). Deploy tx 0xa993fbd0e148d43ec94e5b52c3c9998fa2f0c38c67bac1d8813cd0353ede9b6a."
 }

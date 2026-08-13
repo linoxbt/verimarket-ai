@@ -107,8 +107,8 @@ execute it. That rules out secret API keys, so every source below is keyless:
 
 | Network | Chain ID | Contract address |
 |---|---|---|
-| Studionet | `61999` | `0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797` |
-| Testnet Asimov | `4221` | `0x42919CA9E6DEC6d68D41F032000A26fc598faBD2` |
+| Studionet | `61999` | `0xF31A718EA84e7513821BD018863E73784e6373d2` |
+| Testnet Asimov | `4221` | `0xa9D38077aA11707faB8D98c7333f4037C84575fa` |
 
 Both are live and reachable from the network switcher in the app. Addresses are public and hardcoded in
 [`src/integrations/genlayer/client.ts`](src/integrations/genlayer/client.ts).

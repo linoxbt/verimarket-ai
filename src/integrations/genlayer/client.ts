@@ -16,8 +16,8 @@ export const NETWORK_BY_CHAIN_ID: Record<number, NetworkKey> = {
 
 // Set once each network's VeriMarket contract is deployed (see contracts/deployments/*.json).
 export const CONTRACT_ADDRESSES: Record<NetworkKey, Address | null> = {
-  studionet: "0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797",
-  testnetAsimov: "0x42919CA9E6DEC6d68D41F032000A26fc598faBD2",
+  studionet: "0xF31A718EA84e7513821BD018863E73784e6373d2",
+  testnetAsimov: "0xa9D38077aA11707faB8D98c7333f4037C84575fa",
 };
 
 const DEFAULT_NETWORK: NetworkKey = "studionet";
