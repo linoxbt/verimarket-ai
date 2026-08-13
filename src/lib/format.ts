@@ -1,4 +1,5 @@
 import { formatEther } from "viem";
+import type { MarketStatus } from "@/integrations/genlayer/types";
 
 export function formatGen(wei: bigint, maxDecimals = 4): string {
   const value = Number(formatEther(wei));
@@ -27,6 +28,19 @@ export function formatExpiry(expiryUnix: number): string {
   if (days > 0) return `${days}d ${hours}h left`;
   if (hours > 0) return `${hours}h ${minutes}m left`;
   return `${minutes}m left`;
+}
+
+const STATUS_TIMING_LABEL: Partial<Record<MarketStatus, string>> = {
+  resolving: "Resolving",
+  disputed: "Disputed",
+  finalized: "Resolved",
+};
+
+// formatExpiry alone reads as "Expired" for any market past its expiry, including ones that
+// have already gone through resolution — this picks the right label for the market's actual
+// lifecycle stage instead of just comparing the raw timestamp to now.
+export function marketTimingLabel(status: MarketStatus, expiryUnix: number): string {
+  return STATUS_TIMING_LABEL[status] ?? formatExpiry(expiryUnix);
 }
 
 export function relativeTime(unixSeconds: number): string {

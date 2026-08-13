@@ -105,16 +105,18 @@ All state lives in a single `VeriMarket` contract.
 
 | Method | Kind | Description |
 |---|---|---|
-| `create_market(question, category, source_query, resolution_criteria, expiry)` | write | Opens a new market. `category` is one of `crypto` / `sports` / `news` / `weather`; `source_query` is the evidence lookup key for that category (e.g. a CoinGecko coin id). |
+| `create_market(question, category, source_query, resolution_criteria, expiry)` | write · payable | Opens a new market. `category` is one of `crypto` / `sports` / `news` / `weather`; `source_query` is the evidence lookup key for that category (e.g. a CoinGecko coin id). Requires a GEN bond, split evenly into `yes_pool`/`no_pool` as initial liquidity — not refunded to the creator. |
 | `place_trade(market_id, position)` | write · payable | Stakes GEN on `"yes"` or `"no"` while the market is open. |
 | `resolve_market(market_id)` | write | Callable by anyone once expiry has passed. Runs the leader/validator resolution above and opens the 24h dispute window. |
 | `file_dispute(market_id, evidence)` | write · payable | Bonds a dispute with new evidence during the dispute window. |
 | `arbitrate(market_id)` | write | Re-resolves a disputed market, weighing the original evidence and reasoning against the disputer's evidence, for a final outcome. Refunds the dispute bond to the disputer if overturned, otherwise forfeits it to the contract owner. |
 | `claim_payout(market_id)` | write | Pays out the caller's pro-rata share of the pool if they backed the winning side. |
-| `pin_market(market_id, pinned)` / `hide_market(market_id, hidden)` | write · owner-only | Curate the market list. |
+| `pin_market(market_id, pinned)` / `hide_market(market_id, hidden)` | write · admin-only | Curate the market list. Any admin wallet can call these. |
+| `add_admin(address)` / `remove_admin(address)` | write · owner-only | Grant or revoke admin access. Only the deploying owner can call these. |
 | `get_market` / `get_all_markets` / `get_market_trades` / `get_user_trades(address)` | view | Market and trade data. |
 | `get_resolution` / `get_dispute` / `get_arbitration` | view | Resolution lifecycle data. |
-| `owner_address()` | view | The deploying address — the frontend gates admin actions on `connected wallet == owner`, no separate auth system. |
+| `owner_address()` | view | The deploying address. |
+| `get_admins()` | view | Every address allowed to call `pin_market`/`hide_market` (the owner plus any addresses added via `add_admin`). The frontend gates admin UI on `connected wallet` being in this list — no separate auth system. |
 
 ## Evidence sources
 
@@ -132,8 +134,8 @@ execute it. That rules out secret API keys, so every source below is keyless:
 
 | Network | Chain ID | Contract address |
 |---|---|---|
-| Studionet | `61999` | `0xF31A718EA84e7513821BD018863E73784e6373d2` |
-| Testnet Asimov | `4221` | `0xa9D38077aA11707faB8D98c7333f4037C84575fa` |
+| Studionet | `61999` | `0xE012D834de6C856Aaa6A72c075dd64fEFCcE86A1` |
+| Testnet Asimov | `4221` | `0x4397dF1c52cD81D813B9E3faB3baE59904e266FB` |
 
 Both are live and reachable from the network switcher in the app. Addresses are public and hardcoded in
 [`src/integrations/genlayer/client.ts`](src/integrations/genlayer/client.ts).

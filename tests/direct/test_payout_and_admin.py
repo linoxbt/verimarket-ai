@@ -6,6 +6,7 @@ from conftest import future_expiry
 
 def _create_market(contract, direct_vm, sender, expiry_seconds=30):
     direct_vm.sender = sender
+    direct_vm.value = 1000
     return contract.create_market(
         "Will BTC exceed $100k?",
         "crypto",
@@ -101,6 +102,7 @@ def test_claim_payout_rejects_losing_side(direct_vm, direct_deploy, direct_alice
 def test_pin_and_hide_market_owner_only(direct_vm, direct_deploy, direct_alice, direct_bob, direct_owner):
     # the deploying account becomes contract.owner — deploy as direct_owner explicitly
     direct_vm.sender = direct_owner
+    direct_vm.value = 1000
     contract = direct_deploy("contracts/veri_market.py")
     market_id = contract.create_market(
         "Will BTC exceed $100k?", "crypto", "bitcoin", "criteria", future_expiry()
@@ -119,3 +121,45 @@ def test_pin_and_hide_market_owner_only(direct_vm, direct_deploy, direct_alice, 
     market = contract.get_market(market_id)
     assert market["pinned"] is True
     assert market["hidden"] is True
+
+
+def test_hardcoded_admin_wallets_can_pin_and_hide(direct_vm, direct_deploy, direct_owner):
+    direct_vm.sender = direct_owner
+    direct_vm.value = 1000
+    contract = direct_deploy("contracts/veri_market.py")
+    market_id = contract.create_market(
+        "Will BTC exceed $100k?", "crypto", "bitcoin", "criteria", future_expiry()
+    )
+
+    admins = [a.lower() for a in contract.get_admins()]
+    assert "0xc759e906a02825d483714b8141758f6258145572" in admins
+    assert "0x747df176962e1495355562fe30b65f276f0b8404" in admins
+
+    direct_vm.sender = "0xc759E906A02825D483714B8141758f6258145572"
+    contract.pin_market(market_id, True)
+
+    direct_vm.sender = "0x747df176962E1495355562FE30b65F276f0B8404"
+    contract.hide_market(market_id, True)
+
+    market = contract.get_market(market_id)
+    assert market["pinned"] is True
+    assert market["hidden"] is True
+
+
+def test_add_and_remove_admin_owner_only(direct_vm, direct_deploy, direct_alice, direct_bob, direct_owner):
+    direct_vm.sender = direct_owner
+    contract = direct_deploy("contracts/veri_market.py")
+
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert():
+        contract.add_admin("0x0000000000000000000000000000000000000001")
+
+    direct_vm.sender = direct_owner
+    contract.add_admin("0x0000000000000000000000000000000000000001")
+    assert "0x0000000000000000000000000000000000000001" in contract.get_admins()
+
+    contract.remove_admin("0x0000000000000000000000000000000000000001")
+    assert "0x0000000000000000000000000000000000000001" not in contract.get_admins()
+
+    with direct_vm.expect_revert():
+        contract.remove_admin("0x0000000000000000000000000000000000000001")

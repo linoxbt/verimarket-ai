@@ -6,6 +6,7 @@ from conftest import future_expiry
 
 def _create_market(contract, direct_vm, sender, expiry_seconds=30):
     direct_vm.sender = sender
+    direct_vm.value = 1000
     return contract.create_market(
         "Will BTC exceed $100k?",
         "crypto",
@@ -170,6 +171,7 @@ def test_arbitrate_refunds_bond_when_dispute_overturns_resolution(direct_vm, dir
 
 def test_arbitrate_forfeits_bond_to_owner_when_dispute_fails(direct_vm, direct_deploy, direct_alice, direct_bob, direct_owner):
     direct_vm.sender = direct_owner
+    direct_vm.value = 1000
     contract = direct_deploy("contracts/veri_market.py")
     market_id = contract.create_market(
         "Will BTC exceed $100k?", "crypto", "bitcoin", "criteria", future_expiry(30)

@@ -38,9 +38,10 @@ export function useCreateMarket() {
       sourceQuery: string;
       resolutionCriteria: string;
       expiry: number;
+      bondGen: string;
     }) => {
       if (!address) throw new Error("Connect a wallet first");
-      return veriMarket.createMarket(network, address, params);
+      return veriMarket.createMarket(network, address, { ...params, bondWei: parseEther(params.bondGen) });
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["markets", network] });

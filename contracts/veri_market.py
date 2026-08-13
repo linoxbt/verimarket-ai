@@ -117,8 +117,15 @@ def _address_str(addr: Address) -> str:
     return addr.as_hex if hasattr(addr, "as_hex") else str(addr)
 
 
+ADMIN_WALLETS = (
+    "0xc759E906A02825D483714B8141758f6258145572",
+    "0x747df176962E1495355562FE30b65F276f0B8404",
+)
+
+
 class VeriMarket(gl.Contract):
     owner: Address
+    admins: DynArray[Address]
     next_id: u256
     markets: TreeMap[u256, Market]
     resolutions: TreeMap[u256, Resolution]
@@ -130,12 +137,14 @@ class VeriMarket(gl.Contract):
     def __init__(self):
         self.owner = gl.message.sender_address
         self.next_id = u256(0)
+        for wallet in ADMIN_WALLETS:
+            self.admins.append(Address(wallet))
 
     # ------------------------------------------------------------------
     # Market lifecycle
     # ------------------------------------------------------------------
 
-    @gl.public.write
+    @gl.public.write.payable
     def create_market(
         self,
         question: str,
@@ -151,8 +160,19 @@ class VeriMarket(gl.Contract):
         if int(expiry) <= _now():
             raise gl.vm.UserError(f"{ERROR_EXPECTED} expiry must be in the future")
 
+        bond = gl.message.value
+        if bond == u256(0):
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Creating a market requires a bond")
+
         market_id = self.next_id
         self.next_id = u256(int(self.next_id) + 1)
+
+        # The bond seeds both sides of the pool evenly -- it isn't returned to the
+        # creator, it becomes initial liquidity that flows to whichever side's
+        # traders end up winning, same as any other stake in the pool.
+        half = int(bond) // 2
+        yes_seed = u256(half)
+        no_seed = u256(int(bond) - half)
 
         self.markets[market_id] = Market(
             id=market_id,
@@ -163,8 +183,8 @@ class VeriMarket(gl.Contract):
             expiry=u256(int(expiry)),
             creator=gl.message.sender_address,
             status="open",
-            yes_pool=u256(0),
-            no_pool=u256(0),
+            yes_pool=yes_seed,
+            no_pool=no_seed,
             pinned=False,
             hidden=False,
         )
@@ -440,18 +460,42 @@ Weigh the original evidence AND the disputer's new evidence together and give a 
     # Admin
     # ------------------------------------------------------------------
 
+    def _is_admin(self, sender: Address) -> bool:
+        sender_str = _address_str(sender).lower()
+        if sender_str == _address_str(self.owner).lower():
+            return True
+        return any(sender_str == _address_str(a).lower() for a in self.admins)
+
     @gl.public.write
-    def pin_market(self, market_id: u256, pinned: bool) -> None:
+    def add_admin(self, address: str) -> None:
         if gl.message.sender_address != self.owner:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Only owner")
+        self.admins.append(Address(address))
+
+    @gl.public.write
+    def remove_admin(self, address: str) -> None:
+        if gl.message.sender_address != self.owner:
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Only owner")
+        for i, a in enumerate(self.admins):
+            if _address_str(a).lower() == address.lower():
+                last = len(self.admins) - 1
+                self.admins[i] = self.admins[last]
+                self.admins.pop()
+                return
+        raise gl.vm.UserError(f"{ERROR_EXPECTED} Not an admin")
+
+    @gl.public.write
+    def pin_market(self, market_id: u256, pinned: bool) -> None:
+        if not self._is_admin(gl.message.sender_address):
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Only admin")
         if market_id not in self.markets:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Unknown market")
         self.markets[market_id].pinned = pinned
 
     @gl.public.write
     def hide_market(self, market_id: u256, hidden: bool) -> None:
-        if gl.message.sender_address != self.owner:
-            raise gl.vm.UserError(f"{ERROR_EXPECTED} Only owner")
+        if not self._is_admin(gl.message.sender_address):
+            raise gl.vm.UserError(f"{ERROR_EXPECTED} Only admin")
         if market_id not in self.markets:
             raise gl.vm.UserError(f"{ERROR_EXPECTED} Unknown market")
         self.markets[market_id].hidden = hidden
@@ -518,6 +562,10 @@ Weigh the original evidence AND the disputer's new evidence together and give a 
     @gl.public.view
     def owner_address(self) -> str:
         return _address_str(self.owner)
+
+    @gl.public.view
+    def get_admins(self) -> list:
+        return [_address_str(self.owner)] + [_address_str(a) for a in self.admins]
 
     @gl.public.view
     def get_market(self, market_id: u256) -> dict:

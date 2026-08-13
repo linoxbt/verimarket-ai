@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { TradeActivityFeed } from "@/components/TradeActivityFeed";
 import { OddsChart } from "@/components/OddsChart";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { formatExpiry, formatGen, relativeTime, truncateAddress, yesProbability } from "@/lib/format";
+import { formatExpiry, formatGen, marketTimingLabel, relativeTime, truncateAddress, yesProbability } from "@/lib/format";
 import { explorerAddressUrl } from "@/lib/explorer";
 
 const STATUS_TONE = {
@@ -90,8 +90,12 @@ export default function MarketDetail() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <p className="font-mono text-xs uppercase tracking-wide text-muted">Time remaining</p>
-          <p className="mt-2 font-display text-2xl font-bold text-ink">{formatExpiry(market.expiry)}</p>
+          <p className="font-mono text-xs uppercase tracking-wide text-muted">
+            {market.status === "open" ? "Time remaining" : "Status"}
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold text-ink">
+            {marketTimingLabel(market.status, market.expiry)}
+          </p>
         </Card>
         <Card>
           <p className="font-mono text-xs uppercase tracking-wide text-muted">Probability</p>

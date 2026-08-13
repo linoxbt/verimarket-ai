@@ -1,7 +1,7 @@
 {
-  "contract_address": "0xa9D38077aA11707faB8D98c7333f4037C84575fa",
+  "contract_address": "0x4397dF1c52cD81D813B9E3faB3baE59904e266FB",
   "network": "testnetAsimov",
   "chain_id": 4221,
   "rpc": "https://rpc-asimov.genlayer.com",
-  "notes": "Redeployed to fix a bug in the previous contract (0x42919CA9E6DEC6d68D41F032000A26fc598faBD2): dispute bonds sent via file_dispute were never paid out anywhere in arbitrate(), permanently stuck in the contract. arbitrate() now refunds the bond to the disputer if arbitration overturns the original resolution, otherwise forfeits it to the contract owner. Deployed with the same funded deployer account (0x5cc9c8Dd8811aba73E8c73C0e4735015697d1146). Deploy tx 0xa993fbd0e148d43ec94e5b52c3c9998fa2f0c38c67bac1d8813cd0353ede9b6a."
+  "notes": "Redeployed to add a market-creation bond: create_market is now payable and requires bond>0, split evenly into yes_pool/no_pool as initial liquidity. Bundled with the earlier dispute-bond-disposition fix and multi-admin support (admins: 0xc759E906A02825D483714B8141758f6258145572, 0x747df176962E1495355562FE30b65F276f0B8404, plus owner). Previous contract 0xc63217c06DFed57DF391b38e8D6EE9De9ea7eb86 is superseded. The 2 markets that existed on the very first contract (0x42919CA9E6DEC6d68D41F032000A26fc598faBD2) were recreated on this contract where possible -- market id 1 was originally created by admin wallet 0xc759... using their own funds and could not be replayed on their behalf; the shell was recreated under the deployer account instead and that wallet will need to re-place their trade. Deployed with the same funded deployer account (0x5cc9c8Dd8811aba73E8c73C0e4735015697d1146). Deploy tx 0x6a28ac56f408100421977d304678d78486000154395114f3525f363e22e766fc."
 }

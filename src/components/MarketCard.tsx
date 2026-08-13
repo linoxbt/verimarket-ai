@@ -3,7 +3,7 @@ import { Pin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Market } from "@/integrations/genlayer/types";
-import { formatExpiry, formatGen, yesProbability } from "@/lib/format";
+import { formatGen, marketTimingLabel, yesProbability } from "@/lib/format";
 
 const STATUS_TONE: Record<Market["status"], "pass" | "partial" | "fail" | "neutral"> = {
   open: "pass",
@@ -35,9 +35,9 @@ export function MarketCard({ market }: { market: Market }) {
           </div>
           <div className="flex items-center justify-between font-mono text-[10px] text-muted">
             <span>{probability.toFixed(0)}% YES</span>
-            <span>{formatGen(volume)}</span>
+            <span>Vol {formatGen(volume)}</span>
           </div>
-          <div className="font-mono text-[10px] text-muted">{formatExpiry(market.expiry)}</div>
+          <div className="font-mono text-[10px] text-muted">{marketTimingLabel(market.status, market.expiry)}</div>
         </div>
       </Card>
     </Link>

@@ -2,15 +2,17 @@ import { CONTRACT_ADDRESSES } from "@/integrations/genlayer/client";
 import { explorerAddressUrl } from "@/lib/explorer";
 
 const METHODS = [
-  { name: "create_market(question, category, source_query, resolution_criteria, expiry)", kind: "write" },
+  { name: "create_market(question, category, source_query, resolution_criteria, expiry)", kind: "write · payable" },
   { name: "place_trade(market_id, position)", kind: "write · payable" },
   { name: "resolve_market(market_id)", kind: "write" },
   { name: "file_dispute(market_id, evidence)", kind: "write · payable" },
   { name: "arbitrate(market_id)", kind: "write" },
   { name: "claim_payout(market_id)", kind: "write" },
-  { name: "pin_market / hide_market", kind: "write · owner" },
+  { name: "pin_market / hide_market", kind: "write · admin" },
+  { name: "add_admin / remove_admin", kind: "write · owner" },
   { name: "get_market / get_all_markets / get_market_trades / get_user_trades", kind: "view" },
   { name: "get_resolution / get_dispute / get_arbitration", kind: "view" },
+  { name: "owner_address / get_admins", kind: "view" },
 ];
 
 const FEATURES = [
@@ -73,6 +75,11 @@ export default function Docs() {
         There is no off-chain backend, no oracle service, and no database — every market, trade, resolution,
         dispute and arbitration lives entirely in contract storage, and every read in this app is a live
         contract call.
+      </p>
+      <p className="mt-3 text-sm leading-relaxed text-muted">
+        Creating a market requires posting a GEN bond, which is split evenly into the YES/NO pool as
+        initial liquidity — it isn't refunded to the creator, it just becomes part of what the eventual
+        winning side is paid from.
       </p>
 
       <section className="mt-10 border-t border-line pt-8">

@@ -1,7 +1,7 @@
 {
-  "contract_address": "0xF31A718EA84e7513821BD018863E73784e6373d2",
+  "contract_address": "0xE012D834de6C856Aaa6A72c075dd64fEFCcE86A1",
   "network": "studionet",
   "chain_id": 61999,
   "rpc": "https://studio.genlayer.com/api",
-  "notes": "Redeployed to fix a bug in the original contract (0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797): dispute bonds sent via file_dispute were never paid out anywhere in arbitrate(), permanently stuck in the contract. arbitrate() now refunds the bond to the disputer if arbitration overturns the original resolution, otherwise forfeits it to the contract owner. Deploy tx 0x8c312ec363abcce2ad81b7ee24dfb6eea3d9fc45ada8956f8b8b2dd8697de4f0, MAJORITY_AGREE. Owner key saved to studionet.keys.json (gitignored)."
+  "notes": "Redeployed to add a market-creation bond: create_market is now payable and requires bond>0, split evenly into yes_pool/no_pool as initial liquidity. Bundled with the earlier dispute-bond-disposition fix and multi-admin support (admins: 0xc759E906A02825D483714B8141758f6258145572, 0x747df176962E1495355562FE30b65F276f0B8404, plus owner). Previous contract 0x23bD469A0Ee3B31A846e22eF74a13746bdCcE3a5 is superseded. The 13 markets that existed on the very first contract (0x284a0C90CD7A3A7586522C0eEB1B752EbD2Ee797) before this session's redeploys were recreated on this contract via create_market -- see recreate script output / commit message for the id mapping. Deploy tx 0xcf7197d28d55b85125f112b484911a44d881b1ed55d8b87a1512cc138c980ceb, MAJORITY_AGREE."
 }

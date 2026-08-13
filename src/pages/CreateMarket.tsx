@@ -42,6 +42,7 @@ export default function CreateMarket() {
   const [category, setCategory] = useState<MarketCategory>("crypto");
   const [sourceQuery, setSourceQuery] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [bond, setBond] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const hint = SOURCE_HINTS[category];
@@ -52,6 +53,11 @@ export default function CreateMarket() {
 
     if (!question || !criteria || !sourceQuery || !expiry) {
       setError("Please fill in all fields.");
+      return;
+    }
+
+    if (!bond || Number(bond) <= 0) {
+      setError("A bond greater than 0 GEN is required to create a market.");
       return;
     }
 
@@ -67,6 +73,7 @@ export default function CreateMarket() {
         sourceQuery,
         resolutionCriteria: criteria,
         expiry: toUnixTimestamp(expiry),
+        bondGen: bond,
       });
       navigate("/markets");
     } catch {
@@ -80,7 +87,8 @@ export default function CreateMarket() {
       <h1 className="mt-1 font-display text-2xl font-bold text-ink">Create a market</h1>
       <p className="mt-2 text-sm text-muted">
         Markets are resolved by a GenLayer Intelligent Contract that fetches evidence from the source below
-        and reaches multi-validator consensus on the outcome.
+        and reaches multi-validator consensus on the outcome. Creating a market requires a GEN bond, which
+        seeds both sides of the pool as initial liquidity.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
@@ -144,6 +152,22 @@ export default function CreateMarket() {
             className="rounded-sm border border-line bg-surface px-3 py-2 font-mono text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
           />
           <p className="font-mono text-[11px] text-muted">{hint.help}</p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="font-mono text-xs uppercase tracking-wide text-muted">Creation bond (GEN)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.0001"
+            value={bond}
+            onChange={(e) => setBond(e.target.value)}
+            placeholder="0.001"
+            className="rounded-sm border border-line bg-surface px-3 py-2 font-mono text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
+          />
+          <p className="font-mono text-[11px] text-muted">
+            Split evenly into the YES/NO pool as initial liquidity — not refunded to you directly.
+          </p>
         </div>
 
         {error && <p className="font-mono text-xs text-fail">{error}</p>}

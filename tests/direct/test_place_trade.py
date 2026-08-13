@@ -5,6 +5,7 @@ from conftest import future_expiry
 
 def _create_market(contract, direct_vm, sender, expiry=None):
     direct_vm.sender = sender
+    direct_vm.value = 1000
     return contract.create_market(
         "Will BTC exceed $100k?",
         "crypto",
@@ -66,8 +67,9 @@ def test_place_trade_accumulates_pool_and_records_trade(direct_vm, direct_deploy
     contract.place_trade(market_id, "no")
 
     market = contract.get_market(market_id)
-    assert market["yes_pool"] == 1000
-    assert market["no_pool"] == 500
+    # _create_market posts a 1000-wei bond that seeds both pools 500/500 before any trade
+    assert market["yes_pool"] == 1500
+    assert market["no_pool"] == 1000
 
     trades = contract.get_market_trades(market_id)
     assert len(trades) == 2

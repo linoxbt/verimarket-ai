@@ -154,6 +154,16 @@ export async function getOwner(network: NetworkKey): Promise<string> {
   return String(result);
 }
 
+export async function getAdmins(network: NetworkKey): Promise<string[]> {
+  const client = createGenLayerClient(network);
+  const result = (await client.readContract({
+    address: getContractAddress(network),
+    functionName: "get_admins",
+    args: [],
+  })) as unknown[];
+  return result.map(String);
+}
+
 async function writeAndWait(
   network: NetworkKey,
   account: Address,
@@ -186,15 +196,16 @@ export async function createMarket(
     sourceQuery: string;
     resolutionCriteria: string;
     expiry: number;
+    bondWei: bigint;
   },
 ) {
-  return writeAndWait(network, account, "create_market", [
-    params.question,
-    params.category,
-    params.sourceQuery,
-    params.resolutionCriteria,
-    params.expiry,
-  ]);
+  return writeAndWait(
+    network,
+    account,
+    "create_market",
+    [params.question, params.category, params.sourceQuery, params.resolutionCriteria, params.expiry],
+    params.bondWei,
+  );
 }
 
 export async function placeTrade(

@@ -5,6 +5,7 @@ def test_get_all_markets_and_user_trades(direct_vm, direct_deploy, direct_alice,
     contract = direct_deploy("contracts/veri_market.py")
 
     direct_vm.sender = direct_alice
+    direct_vm.value = 1000
     m0 = contract.create_market("Q1", "crypto", "bitcoin", "criteria", future_expiry())
     m1 = contract.create_market("Q2", "sports", "Arsenal_vs_Chelsea", "criteria", future_expiry())
 
